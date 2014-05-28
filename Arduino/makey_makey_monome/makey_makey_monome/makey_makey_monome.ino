@@ -401,8 +401,9 @@ void updateMonome() {
             if(!buttons[index].state) { 
               buttons[index].state = true;
               setNeopixel(index, true);
-#ifdef SERIAL9600              
-              Serial.write(index);
+#ifdef SERIAL9600 
+              // add 1 to differentiate index from 0 bytes of serial data
+              Serial.write(index+1);
 #endif              
 #ifdef DEBUG_MONOME
               Serial.print("button ");
@@ -414,7 +415,7 @@ void updateMonome() {
               buttons[index].state = false;
               setNeopixel(index, false);
 #ifdef SERIAL9600              
-              Serial.write(index+64);
+              Serial.write(index+65);
 #endif  
 #ifdef DEBUG_MONOME
               Serial.print("button ");

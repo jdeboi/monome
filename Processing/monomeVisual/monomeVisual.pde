@@ -15,6 +15,10 @@ import ddf.minim.*;
 Minim minim;
 AudioSample[] sounds;
 
+int numRow = 8;
+int numCol = 8;
+int numButtons = numRow * numCol; 
+
 int timeStamp;
 int speed = 800;
 int column = 0;
@@ -44,13 +48,13 @@ int monomeY = (windowHeight - monomeHeight)/2;
 
 void setup() {
   size(windowWidth, windowHeight, P3D);
-  rowTime = new int[8];
-  columnTime = new int[8];
-  buttons = new Button[64];
+  rowTime = new int[numRow];
+  columnTime = new int[numCol];
+  buttons = new Button[numButtons];
   
   // List all the available serial ports
   println(Serial.list());
-  String portName = Serial.list()[4];
+  String portName = Serial.list()[0];
   myPort = new Serial(this, portName, 9600);
   
  loadSounds();
@@ -75,23 +79,24 @@ void draw() {
 void checkButtons() {
   if ( myPort.available() > 0) {  // If data is available,
     val = myPort.read();         // read it and store it in val
-    println(val);
   }
-  if (val > 63) {
-    buttons[val-64].switchOff();
-  }
-  else buttons[val].switchOn();
+  /* we add 1 to the button index value on the Arduino
+   so that we can differentiate from a null serial transmission
+   We add 64 to the index to indicate that the button is turning off
+   */
+  if (val > 64) buttons[val-65].switchOff();
+  else if (val > 0) buttons[val-1].switchOn();
 }
 
 void updateMonome() {
-  for(int i=0; i<8; i++) {
+  for(int i=0; i<numRow; i++) {
     if(millis() - rowTime[i] < triggerThresh){
-      for(int j=0; j<8; j++) {
+      for(int j=0; j<numCol; j++) {
         if(millis() - columnTime[j] < triggerThresh) {
-          checkButton(i*8 + j);
+          checkButton(i*numRow + j);
         }
         else {
-          buttons[i*8+j].pressed = false;
+          buttons[i*numRow+j].pressed = false;
         }
       }
     }
@@ -105,18 +110,18 @@ void sequence()  {
   if(millis() - timeStamp > speed) {
     highlight();
     column++;
-    if(column==8) column = 0;
+    if(column==numCol) column = 0;
     timeStamp = millis();
   }
 }
 
 void highlight() {
   for(int i=0; i<8; i++) {
-    buttons[column+i*8].highlight();
+    buttons[column+i*numRow].highlight();
     if(column == 0) {
-       buttons[7+i*8].unHighlight();
+       buttons[7+i*numRow].unHighlight();
     }
-    else buttons[column-1+i*8].unHighlight();
+    else buttons[column-1+i*numRow].unHighlight();
   }
 }
 
@@ -143,7 +148,7 @@ void checkButton(int button) {
 }
 
 void resetRow(int rowNum) {
-  for(int i=(rowNum*8); i<(rowNum*8+8); i++) {
+  for(int i=(rowNum*numRow); i<(rowNum*numRow+numRow); i++) {
     buttons[i].pressed = false;
   }
 }
@@ -157,6 +162,9 @@ void keyPressed() {
   else if (keyCode == DOWN) {
     speed+=20;
     if (speed>2000) speed=2000;
+  }
+  else if (key == 'r') {
+    resetMonome();
   }
   else {
     for(int i=0; i<8; i++) {
@@ -175,7 +183,7 @@ void keyPressed() {
 
   
 void mouseReleased() {
-  for(int i=0; i<64; i++) {
+  for(int i=0; i<numButtons; i++) {
     if(buttons[i].contains()) buttons[i].switchState();
   }
   updateMonome();
@@ -185,7 +193,7 @@ void loadSounds() {
    // see minim Processing example files for explanations
   minim = new Minim(this);
   // load sounds - filename, buffer size
-  sounds = new AudioSample[8];
+  sounds = new AudioSample[numRow];
   sounds[0] = minim.loadSample("audio/clap.wav", 512);
   sounds[1] = minim.loadSample("audio/hihatcl.wav", 512);
   sounds[2] = minim.loadSample("audio/hihatopen.wav", 512);
@@ -196,6 +204,10 @@ void loadSounds() {
   sounds[7] = minim.loadSample("audio/tomlow.wav", 512);
 }
     
-  
+void resetMonome() {
+  for (int i=0; i< numButtons; i++) {
+   buttons[i].switchOff();
+  }
+} 
 
 
