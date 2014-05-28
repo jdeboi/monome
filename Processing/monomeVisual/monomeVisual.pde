@@ -31,9 +31,9 @@ char[] rowLetters = {'a', 's', 'd', 'f', 'g', 'h', 'j', 'k'};
 
 Button[] buttons;
 
-int windowWidth = 600;
-int windowHeight = 600;
-int monomeWidth= 460;
+int windowWidth = 700;
+int windowHeight = 700;
+int monomeWidth= 600;
 int monomeHeight= monomeWidth;
 int padding = 10;
 int columnSpacing = 8;
@@ -48,8 +48,8 @@ int monomeY = (windowHeight - monomeHeight)/2;
 
 void setup() {
   size(windowWidth, windowHeight, P3D);
-  rowTime = new int[numRow];
-  columnTime = new int[numCol];
+  rowTime = new int[8];
+  columnTime = new int[8];
   buttons = new Button[numButtons];
   
   // List all the available serial ports
@@ -89,14 +89,14 @@ void checkButtons() {
 }
 
 void updateMonome() {
-  for(int i=0; i<numRow; i++) {
+  for(int i=0; i<8; i++) {
     if(millis() - rowTime[i] < triggerThresh){
-      for(int j=0; j<numCol; j++) {
+      for(int j=0; j<8; j++) {
         if(millis() - columnTime[j] < triggerThresh) {
-          checkButton(i*numRow + j);
+          checkButton(i*8 + j);
         }
         else {
-          buttons[i*numRow+j].pressed = false;
+          buttons[i*8+j].pressed = false;
         }
       }
     }
@@ -110,18 +110,18 @@ void sequence()  {
   if(millis() - timeStamp > speed) {
     highlight();
     column++;
-    if(column==numCol) column = 0;
+    if(column==8) column = 0;
     timeStamp = millis();
   }
 }
 
 void highlight() {
   for(int i=0; i<8; i++) {
-    buttons[column+i*numRow].highlight();
+    buttons[column+i*8].highlight();
     if(column == 0) {
-       buttons[7+i*numRow].unHighlight();
+       buttons[7+i*8].unHighlight();
     }
-    else buttons[column-1+i*numRow].unHighlight();
+    else buttons[column-1+i*8].unHighlight();
   }
 }
 
@@ -148,7 +148,7 @@ void checkButton(int button) {
 }
 
 void resetRow(int rowNum) {
-  for(int i=(rowNum*numRow); i<(rowNum*numRow+numRow); i++) {
+  for(int i=(rowNum*8); i<(rowNum*8+8); i++) {
     buttons[i].pressed = false;
   }
 }
@@ -193,7 +193,7 @@ void loadSounds() {
    // see minim Processing example files for explanations
   minim = new Minim(this);
   // load sounds - filename, buffer size
-  sounds = new AudioSample[numRow];
+  sounds = new AudioSample[8];
   sounds[0] = minim.loadSample("audio/clap.wav", 512);
   sounds[1] = minim.loadSample("audio/hihatcl.wav", 512);
   sounds[2] = minim.loadSample("audio/hihatopen.wav", 512);

@@ -46,8 +46,7 @@
 //#define DEBUG2 
 //#define DEBUG3 
 //#define DEBUG_TIMING
-#define SERIAL9600
-#define DEBUG_MONOME
+//#define DEBUG_MONOME
 
 ////////////////////////
 // DEFINED CONSTANTS////
@@ -59,7 +58,7 @@
 #define NUM_BUTTONS      NUM_ROWS * NUM_COLUMNS    // 64 buttons
 #define TARGET_LOOP_TIME 744  // (1/56 seconds) / 24 samples = 744 microseconds per sample 
 
-//#define SERIAL9600
+#define SERIAL9600
 #include "settings.h"
 
 /////////////////////////
@@ -78,13 +77,12 @@ typedef struct {
 MakeyMakeyInput;
 MakeyMakeyInput inputs[NUM_INPUTS];
 
-/////////////////////////
-// BUTTON STRUCT ////////
-/////////////////////////
+// create some buttons to keep track of LED states
 typedef struct {
   boolean pressed;
   boolean state;
-} 
+  boolean highlight;
+}
 Button;
 Button buttons [NUM_BUTTONS];
 
@@ -96,8 +94,9 @@ Button buttons [NUM_BUTTONS];
 #define NEO_PIN 0
 #include <Adafruit_NeoPixel.h>
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_BUTTONS, NEO_PIN, NEO_GRB + NEO_KHZ800);
-uint16_t ledColor = 255;  
-
+uint16_t ledColor = 255;
+uint16_t ledHighlightColor = 155;
+uint16_t ledHighlightOnColor = 299;
 
 ///////////////////////////////////
 // VARIABLES //////////////////////
@@ -544,6 +543,35 @@ void clearNeopixels() {
   strip.show();
 }
 
+void clearMonome() {
+  for(int i=0; i<NUM_BUTTONS; i++) {
+    strip.setPixelColor(i, 0);
+    buttons[i].state = false;
+    buttons[i].highlight = false;
+  }
+  strip.show();
+}
 
-
+void highlightColumn(int column) {
+  for (int i=0; i<8; i++) {
+    
+    // highlight the colum; buttons that are already on get a diff color
+    buttons[column+i*8].highlight = true;
+    if (buttons[column+i*8].state == true) {
+      strip.setPixelColor(column+i*8, ledHighlightOnColor);
+    }
+    else strip.setPixelColor(column+i*8, ledHighlightColor);
+    
+    // turn off the column that was previously highlighted
+    if (column == 0) {
+       buttons[7+i*8].highlight = false;
+       strip.setPixelColor(7+i*8, 0);
+    }
+    else {
+      buttons[column-1+i*8].highlight = false;
+      strip.setPixelColor(column-1+i*8, 0);
+    }
+  }
+  strip.show();
+}
 
