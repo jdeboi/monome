@@ -1,4 +1,4 @@
-/**
+/*
  * Makey Makey Monome
  *
  * Jenna deBoisblanc
@@ -44,7 +44,13 @@ int buttonHeight = (monomeHeight - rowSpacing*9-2*padding)/8;
 int monomeX = (windowWidth - monomeWidth)/2;
 int monomeY = (windowHeight - monomeHeight)/2;
 
-
+// arrays for recording monome
+int[] timeTriggered = new int[0];
+int[] buttonTriggered = new int[0];
+boolean record = false;
+int startTime = 0;
+String[] recording;
+int index = 0;
 
 void setup() {
   size(windowWidth, windowHeight, P3D);
@@ -58,51 +64,31 @@ void setup() {
   myPort = new Serial(this, portName, 9600);
   
  loadSounds();
+ createButtons();
+ 
+ // load previous recording
+ recording = loadStrings("recording.txt");
 
-  for(int i=0; i<64; i++) {
-    buttons[i] = new Button (i, monomeX+padding+columnSpacing+columnSpacing*(i%8)+buttonWidth*(i%8),
-    monomeY+padding+rowSpacing+rowSpacing*(i/8)+buttonWidth*(i/8), buttonWidth, buttonHeight);
-  }
-  for(int i=0; i<8; i++) {
-    rowTime[i] = millis();
-    columnTime[i] = millis();
-  }
+ 
 }
 
 void draw() {
   background(255);
-  checkButtons();
+  updateButtons();
   drawMonome();
   sequence();
 }
 
-void checkButtons() {
+void updateButtons() {
   if ( myPort.available() > 0) {  // If data is available,
     val = myPort.read();         // read it and store it in val
-  }
-  /* we add 1 to the button index value on the Arduino
-   so that we can differentiate from a null serial transmission
-   We add 64 to the index to indicate that the button is turning off
-   */
-  if (val > 64) buttons[val-65].switchOff();
-  else if (val > 0) buttons[val-1].switchOn();
-}
-
-void updateMonome() {
-  for(int i=0; i<8; i++) {
-    if(millis() - rowTime[i] < triggerThresh){
-      for(int j=0; j<8; j++) {
-        if(millis() - columnTime[j] < triggerThresh) {
-          checkButton(i*8 + j);
-        }
-        else {
-          buttons[i*8+j].pressed = false;
-        }
-      }
-    }
-    else {
-      resetRow(i);
-    }
+    /* we add 1 to the button index value on the Arduino
+    so that we can differentiate from a null serial transmission
+     We add 64 to the index to indicate that the button is turning off
+     */
+    if (val > 64) buttons[val-65].switchOff();
+    else if (val > 0) buttons[val-1].switchOn();
+    recordButton(val);
   }
 }
 
@@ -140,12 +126,6 @@ void drawMonome() {
 }
 
 
-void checkButton(int button) {
-  if (!buttons[button].pressed) {
-    buttons[button].switchState();
-    buttons[button].pressed = true;
-  }
-}
 
 void resetRow(int rowNum) {
   for(int i=(rowNum*8); i<(rowNum*8+8); i++) {
@@ -163,19 +143,15 @@ void keyPressed() {
     speed+=20;
     if (speed>2000) speed=2000;
   }
-  else if (key == 'r') {
+  else if (key == 'c') {
     resetMonome();
   }
-  else {
-    for(int i=0; i<8; i++) {
-      if (key == rowLetters[i]) {
-        rowTime[i] = millis();
-      }
-      else if ((key-49) == i) {
-        columnTime[i] = millis();
-      }
-    }
-    updateMonome();
+  else if (key == 'r') {
+    startRecording();
+  }
+  else if (key == 's') {
+    record=false;
+    saveRecording();
   }
 }
 
@@ -184,9 +160,12 @@ void keyPressed() {
   
 void mouseReleased() {
   for(int i=0; i<numButtons; i++) {
-    if(buttons[i].contains()) buttons[i].switchState();
+    if(buttons[i].contains()) { 
+      buttons[i].switchState();
+      if(buttons[i].state) recordButton(i+1);
+      else recordButton(i+65); 
+    }
   }
-  updateMonome();
 }
 
 void loadSounds() {
@@ -194,14 +173,21 @@ void loadSounds() {
   minim = new Minim(this);
   // load sounds - filename, buffer size
   sounds = new AudioSample[8];
-  sounds[0] = minim.loadSample("audio/clap.wav", 512);
-  sounds[1] = minim.loadSample("audio/hihatcl.wav", 512);
-  sounds[2] = minim.loadSample("audio/hihatopen.wav", 512);
-  sounds[3] = minim.loadSample("audio/kick.wav", 512);
-  sounds[4] = minim.loadSample("audio/snare.wav", 512);
-  sounds[5] = minim.loadSample("audio/starkick.wav", 512);
-  sounds[6] = minim.loadSample("audio/tomhi.wav", 512);
-  sounds[7] = minim.loadSample("audio/tomlow.wav", 512);
+  sounds[0] = minim.loadSample("audio/0.wav", 512); // clap
+  sounds[1] = minim.loadSample("audio/1.wav", 512); // hihatcl
+  sounds[2] = minim.loadSample("audio/2.wav", 512); // hihatopen
+  sounds[3] = minim.loadSample("audio/3.wav", 512); // kick
+  sounds[4] = minim.loadSample("audio/4.wav", 512); // snare
+  sounds[5] = minim.loadSample("audio/5.wav", 512); // starkick
+  sounds[6] = minim.loadSample("audio/6.wav", 512); // tomhi
+  sounds[7] = minim.loadSample("audio/7.wav", 512); // tomlow
+}
+
+void createButtons() {
+  for(int i=0; i<64; i++) {
+    buttons[i] = new Button (i, monomeX+padding+columnSpacing+columnSpacing*(i%8)+buttonWidth*(i%8),
+    monomeY+padding+rowSpacing+rowSpacing*(i/8)+buttonWidth*(i/8), buttonWidth, buttonHeight);
+  }
 }
     
 void resetMonome() {
@@ -210,4 +196,39 @@ void resetMonome() {
   }
 } 
 
+void startRecording() {
+  record = true;
+  startTime = millis();
+  for (int i=0; i < numButtons; i++) {
+    if (buttons[i].state) recordButton(i+1);
+  }
+}
+
+void recordButton(int button) {
+  if(record) {
+    timeTriggered = append(timeTriggered, millis() - startTime);
+    buttonTriggered = append(buttonTriggered, button);
+  }  
+}
+
+void saveRecording() {
+  String[] lines = new String[timeTriggered.length];
+  for (int i = 0; i < timeTriggered.length; i++) {
+    lines[i] = timeTriggered[i] + "\t" + buttonTriggered[i];
+  }
+  saveStrings("recording.txt", lines);
+}
+
+void playRecording() {
+if (index < lines.length) {
+    String[] pieces = split(lines[index], '\t');
+    if (pieces.length == 2) {
+      int x = int(pieces[0]) * 2;
+      int y = int(pieces[1]) * 2;
+      point(x, y);
+    }
+    // Go to the next line for the next run through draw()
+    index = index + 1;
+  }
+}
 
