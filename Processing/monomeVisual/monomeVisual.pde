@@ -51,6 +51,9 @@ boolean record = false;
 int startTime = 0;
 String[] recording;
 int index = 0;
+boolean playing = false;
+int playStartTime = 0;
+int fileNumber = 0;
 
 void setup() {
   size(windowWidth, windowHeight, P3D);
@@ -75,6 +78,9 @@ void setup() {
 void draw() {
   background(255);
   updateButtons();
+  if (playing) {
+    checkPlaying();
+  }
   drawMonome();
   sequence();
 }
@@ -153,6 +159,9 @@ void keyPressed() {
     record=false;
     saveRecording();
   }
+  else if (key == 'p') {
+    startPlaying();
+  }
 }
 
 
@@ -199,6 +208,9 @@ void resetMonome() {
 void startRecording() {
   record = true;
   startTime = millis();
+  // save the speed
+  timeTriggered = append(timeTriggered, startTime);
+  buttonTriggered = append(buttonTriggered, speed);
   for (int i=0; i < numButtons; i++) {
     if (buttons[i].state) recordButton(i+1);
   }
@@ -219,16 +231,35 @@ void saveRecording() {
   saveStrings("recording.txt", lines);
 }
 
-void playRecording() {
-if (index < lines.length) {
-    String[] pieces = split(lines[index], '\t');
-    if (pieces.length == 2) {
-      int x = int(pieces[0]) * 2;
-      int y = int(pieces[1]) * 2;
-      point(x, y);
-    }
-    // Go to the next line for the next run through draw()
-    index = index + 1;
-  }
+void startPlaying() {
+  resetMonome();
+  index = 0;
+  playStartTime = millis();
+  playing = true;
 }
+
+void checkPlaying() {
+  if (index == 0) {
+    String[] buttonEvent = split(recording[0], '\t');
+    speed = int(buttonEvent[1]);
+    index++;
+  }
+  else if (index < recording.length) {
+    String[] buttonEvent = split(recording[index], '\t');
+    if (millis() - playStartTime > int(buttonEvent[0])) {
+      int value = int(buttonEvent[1]);
+      if (value > 64) buttons[value-65].switchOff();
+      else if (value > 0) buttons[value-1].switchOn();
+      // Go to the next line for the next run through draw()
+      index++;
+    }
+  }
+  else stopPlaying();
+}
+
+void stopPlaying() {
+  playing = false;
+}
+
+  
 
