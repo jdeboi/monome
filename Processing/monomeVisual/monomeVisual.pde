@@ -33,7 +33,7 @@ Button[] buttons;
 
 int windowWidth = 700;
 int windowHeight = 700;
-int monomeWidth= 600;
+int monomeWidth= 500;
 int monomeHeight= monomeWidth;
 int padding = 10;
 int columnSpacing = 8;
@@ -55,11 +55,19 @@ boolean playing = false;
 int playStartTime = 0;
 int fileNumber = 0;
 
+// menu bar
+int numMenuButtons = 4;
+MenuButton[] menuButtons;
+
+int fileNum = 0;
+int fileIndex = 0;
+
 void setup() {
   size(windowWidth, windowHeight, P3D);
   rowTime = new int[8];
   columnTime = new int[8];
   buttons = new Button[numButtons];
+  menuButtons = new MenuButton[numMenuButtons];
   
   // List all the available serial ports
   println(Serial.list());
@@ -67,10 +75,11 @@ void setup() {
   myPort = new Serial(this, portName, 9600);
   
  loadSounds();
+ loadMenuButtons();
  createButtons();
  
  // load previous recording
- recording = loadStrings("recording.txt");
+ recording = loadStrings("recording0.txt");
 
  
 }
@@ -126,9 +135,8 @@ void drawMonome() {
   fill(200);
   rect(monomeX+padding, monomeY+padding,monomeWidth-2*padding, monomeHeight-2*padding);
   
-  for(int i=0; i<64; i++) {
-    buttons[i].drawButton();
-  }
+  drawButtons();
+  drawMenuButtons();
 }
 
 
@@ -153,13 +161,58 @@ void keyPressed() {
     resetMonome();
   }
   else if (key == 'r') {
-    startRecording();
+    if(record) record=false;
+    else startRecording();
   }
   else if (key == 's') {
     record=false;
     saveRecording();
   }
   else if (key == 'p') {
+    if(playing) {
+      playing = false;
+      stopPlaying();
+    }
+    else startPlaying();
+  }
+  else if (key == '0') {
+    fileIndex = 0;
+    startPlaying();
+  }
+  else if (key == '1') {
+    fileIndex = 1;
+    startPlaying();
+  }
+  else if (key == '2') {
+    fileIndex = 2;
+    startPlaying();
+  }
+  else if (key == '3') {
+    fileIndex = 3;
+    startPlaying();
+  }
+  else if (key == '4') {
+    fileIndex = 4;
+    startPlaying();
+  }
+  else if (key == '5') {
+    fileIndex = 5;
+    startPlaying();
+  }
+  else if (key == '6') {
+    fileIndex = 6;
+    startPlaying();
+  }
+  else if (key == '7') {
+    fileIndex = 7;
+    startPlaying();
+  }
+  else if (key == '8') {
+    fileIndex = 8;
+    startPlaying();
+  }
+  else if (key == '9') {
+    fileIndex = 9;
     startPlaying();
   }
 }
@@ -168,13 +221,8 @@ void keyPressed() {
 
   
 void mouseReleased() {
-  for(int i=0; i<numButtons; i++) {
-    if(buttons[i].contains()) { 
-      buttons[i].switchState();
-      if(buttons[i].state) recordButton(i+1);
-      else recordButton(i+65); 
-    }
-  }
+  checkButtonClick();
+  checkMenuButtonClick();
 }
 
 void loadSounds() {
@@ -206,8 +254,13 @@ void resetMonome() {
 } 
 
 void startRecording() {
+  fileNum++;
+  fileIndex = fileNum;
   record = true;
   startTime = millis();
+  // clear the record arrays
+  timeTriggered = new int[0];
+  buttonTriggered = new int[0];
   // save the speed
   timeTriggered = append(timeTriggered, startTime);
   buttonTriggered = append(buttonTriggered, speed);
@@ -228,21 +281,32 @@ void saveRecording() {
   for (int i = 0; i < timeTriggered.length; i++) {
     lines[i] = timeTriggered[i] + "\t" + buttonTriggered[i];
   }
-  saveStrings("recording.txt", lines);
+  String recordingFileName = "recording" + fileNum + ".txt";
+  saveStrings(recordingFileName, lines);
 }
 
 void startPlaying() {
   resetMonome();
+  stopRecording();
+  menuButtons[2].switchOn();
   index = 0;
   playStartTime = millis();
   playing = true;
+  String recordingFileName = "recording" + fileIndex + ".txt";
+  if(fileExists(recordingFileName)) recording = loadStrings(recordingFileName);
+  else stopPlaying();
 }
 
 void checkPlaying() {
   if (index == 0) {
-    String[] buttonEvent = split(recording[0], '\t');
-    speed = int(buttonEvent[1]);
-    index++;
+    if(recording.length>0) {
+      String[] buttonEvent = split(recording[0], '\t');
+      speed = int(buttonEvent[1]);
+      index++;
+    }
+    else {
+      stopPlaying();
+    }
   }
   else if (index < recording.length) {
     String[] buttonEvent = split(recording[index], '\t');
@@ -259,7 +323,89 @@ void checkPlaying() {
 
 void stopPlaying() {
   playing = false;
+  menuButtons[2].switchOff();
 }
 
-  
+void stopRecording() {
+  record=false;
+  menuButtons[0].switchOff();
+}
 
+void loadMenuButtons() {
+  int menuX = 100;
+  int menuY = 40;
+  int menuW=50;
+  int menuH=50;
+  int spacing = 10;
+  // record
+  menuButtons[0] = new MenuButton(0, menuX, menuY, menuW, menuH, "Record", "icons/record0.png", "icons/record1.png");
+  // save
+  menuButtons[1] = new MenuButton(1, menuX+menuW+spacing, menuY, menuW, menuH, "Save", "icons/save.png", "icons/save.png");
+  // play
+  menuButtons[2] = new MenuButton(2, menuX+2*(menuW+spacing), menuY, menuW, menuH, "Play/Pause", "icons/play.png", "icons/pause.png");
+  // clear
+  menuButtons[3] = new MenuButton(3, menuX+3*(menuW+spacing), menuY, menuW, menuH,"Reset", "icons/reset.png", "icons/reset.png");
+  //menuButtons[4] = new MenuButton();
+}
+
+void triggerMenuButton(int n, boolean s) {
+  // record
+  if (n==0) {
+    if(s) startRecording();
+    else stopRecording();
+  }
+  // save
+  else if (n==1) {
+    stopRecording();
+    saveRecording();
+  }
+  // play
+  else if (n==2) {
+    if(s) startPlaying();
+    else stopPlaying();
+  }
+  // clear
+  else if (n==3) {
+    stopPlaying();
+    stopRecording();
+    resetMonome();
+  }
+  else {}
+}
+  
+void checkButtonClick() {
+  for(int i=0; i<numButtons; i++) {
+    if(buttons[i].contains()) { 
+      buttons[i].switchState();
+      if(buttons[i].state) recordButton(i+1);
+      else recordButton(i+65); 
+    }
+  }
+}
+
+void checkMenuButtonClick() {
+  for(int i=0; i<numMenuButtons; i++) {
+    if(menuButtons[i].contains()) { 
+      menuButtons[i].switchState();
+      triggerMenuButton(i, menuButtons[i].state);
+    }
+  }
+}
+
+void drawButtons() {
+  for(int i=0; i<64; i++) {
+    buttons[i].drawButton();
+  }  
+}
+
+void drawMenuButtons() {
+  for(int i=0; i<numMenuButtons; i++) {
+    menuButtons[i].drawButton();
+  }
+}
+
+boolean fileExists(String filename) {
+  File f = new File(sketchPath(filename));
+  if(!f.exists()) return false;
+  return true;
+}
