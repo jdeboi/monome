@@ -79,7 +79,7 @@ void setup() {
  createButtons();
  
  // load previous recording
- recording = loadStrings("recording0.txt");
+ recording = loadStrings("recordings/recording0.txt");
 
  
 }
@@ -281,7 +281,7 @@ void saveRecording() {
   for (int i = 0; i < timeTriggered.length; i++) {
     lines[i] = timeTriggered[i] + "\t" + buttonTriggered[i];
   }
-  String recordingFileName = "recording" + fileNum + ".txt";
+  String recordingFileName = "recordings/recording" + fileNum + ".txt";
   saveStrings(recordingFileName, lines);
 }
 
@@ -292,7 +292,7 @@ void startPlaying() {
   index = 0;
   playStartTime = millis();
   playing = true;
-  String recordingFileName = "recording" + fileIndex + ".txt";
+  String recordingFileName = "recordings/recording" + fileIndex + ".txt";
   if(fileExists(recordingFileName)) recording = loadStrings(recordingFileName);
   else stopPlaying();
 }
