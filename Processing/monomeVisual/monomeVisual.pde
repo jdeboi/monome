@@ -7,6 +7,8 @@
  *
  */
 
+
+
 import processing.serial.*;
 Serial myPort;  // Create object from Serial class
 int val;      // Data received from the serial port
@@ -62,12 +64,17 @@ MenuButton[] menuButtons;
 int fileNum = 0;
 int fileIndex = 0;
 
+Slider slider;
+int maxSpeedDelay = 1000;
+int minSpeedDelay = 30;
+
 void setup() {
   size(windowWidth, windowHeight, P3D);
   rowTime = new int[8];
   columnTime = new int[8];
   buttons = new Button[numButtons];
   menuButtons = new MenuButton[numMenuButtons];
+  slider = new Slider(400, 50, 160, 15, minSpeedDelay, maxSpeedDelay, 800);
   
   // List all the available serial ports
   println(Serial.list());
@@ -87,6 +94,7 @@ void setup() {
 void draw() {
   background(255);
   updateButtons();
+  slider.drawSlider();
   if (playing) {
     checkPlaying();
   }
@@ -151,11 +159,13 @@ void resetRow(int rowNum) {
 void keyPressed() {
   if (keyCode == UP) {
     speed-=20;
-    if (speed<0) speed=0;
+    if (speed<minSpeedDelay) speed=minSpeedDelay;
+    slider.setSliderVal(speed);
   }
   else if (keyCode == DOWN) {
     speed+=20;
-    if (speed>2000) speed=2000;
+    if (speed>maxSpeedDelay) speed=maxSpeedDelay;
+    slider.setSliderVal(speed);
   }
   else if (key == 'c') {
     resetMonome();
@@ -223,6 +233,7 @@ void keyPressed() {
 void mouseReleased() {
   checkButtonClick();
   checkMenuButtonClick();
+  slider.draggable = false;
 }
 
 void loadSounds() {
@@ -342,7 +353,7 @@ void loadMenuButtons() {
   // save
   menuButtons[1] = new MenuButton(1, menuX+menuW+spacing, menuY, menuW, menuH, "Save", "icons/save.png", "icons/save.png");
   // play
-  menuButtons[2] = new MenuButton(2, menuX+2*(menuW+spacing), menuY, menuW, menuH, "Play/Pause", "icons/play.png", "icons/pause.png");
+  menuButtons[2] = new MenuButton(2, menuX+2*(menuW+spacing), menuY, menuW, menuH, "Play", "icons/play.png", "icons/pause.png");
   // clear
   menuButtons[3] = new MenuButton(3, menuX+3*(menuW+spacing), menuY, menuW, menuH,"Reset", "icons/reset.png", "icons/reset.png");
   //menuButtons[4] = new MenuButton();
@@ -409,3 +420,18 @@ boolean fileExists(String filename) {
   if(!f.exists()) return false;
   return true;
 }
+
+
+void mousePressed() {
+  if(slider.contains()) slider.draggable = true;
+}
+
+
+void mouseDragged() {
+  if (slider.draggable) {
+    slider.updateSliderPosMouse();
+    speed = slider.getSliderVal();
+    println(speed);
+  }
+}
+    

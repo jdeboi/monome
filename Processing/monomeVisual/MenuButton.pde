@@ -21,10 +21,10 @@ class MenuButton {
   
   void drawButton() {
     if (contains()) {
-      fill(240);
+      fill(245);
       noStroke();
       int buttonPadding = 10;
-      rect(x-buttonPadding/2, y-buttonPadding/2, imageDim+buttonPadding, imageDim+buttonPadding/2);
+      rect(x-buttonPadding/2, y-buttonPadding/2, imageDim+buttonPadding, imageDim+buttonPadding*2);
       fill(0);
       stroke(0);
       text(label, x-buttonPadding/2, y+imageDim+buttonPadding);
