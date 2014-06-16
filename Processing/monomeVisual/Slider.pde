@@ -14,8 +14,7 @@ class Slider {
     maxVal = max;
     sliderVal = init;
     sliderY = y -((sliderH-h)/2);
-    updateSliderPos();
-    
+    updateSliderPos(); 
   }
   
   void drawSlider() {
@@ -50,8 +49,5 @@ class Slider {
   void updateSliderPos() {
     sliderPos = int(map(sliderVal, maxVal, minVal, 0.0, 1.0)*w+x);
   }
-    
-    
-
 }
     
