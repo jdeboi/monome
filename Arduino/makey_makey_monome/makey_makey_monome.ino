@@ -190,7 +190,8 @@ void setup()
 // MAIN LOOP ///////
 ////////////////////
 void loop() 
-{
+{ 
+  checkSerialInput();
   updateMeasurementBuffers();
   updateBufferSums();
   updateBufferIndex();
@@ -203,9 +204,10 @@ void loop()
 // INITIALIZE ARDUINO
 //////////////////////////
 void initializeArduino() {
-#ifdef SERIAL9600
   Serial.begin(9600);  
-#endif
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for Leonardo only
+  }
   /* Set up input pins 
    DEactivate the internal pull-ups, since we're using external resistors */
   for (int i=0; i<NUM_INPUTS; i++)
@@ -270,6 +272,15 @@ void initializeInputs() {
   }
 }
 
+void checkSerialInput() {
+  if (Serial.available() > 0) {
+      // get incoming byte:
+      inByte = Serial.read();
+  }
+  if (inByte<9) highlightColumn(inByte);
+  // if the value is over 10, change the color of the LEDs
+  else ledColor = inByte;
+}
 
 ///////////////////////////
 // INITIALIZE Neopixels

@@ -76,7 +76,8 @@ void setup() {
   println(Serial.list());
   String portName = Serial.list()[0];
   myPort = new Serial(this, portName, 9600);
-  
+ 
+ // initialize functions 
  loadSounds();
  loadMenuButtons();
  createButtons();
@@ -139,6 +140,8 @@ void drawFileNumber() {
 void sequence()  {
   if(millis() - timeStamp > speed) {
     highlight();
+    // let the Arduino know which column to highlight
+    myPort.write(column);
     column++;
     if(column==8) column = 0;
     timeStamp = millis();
@@ -327,7 +330,6 @@ boolean fileExists(String filename) {
 void mousePressed() {
   if(slider.contains()) slider.draggable = true;
 }
-
 
 void mouseDragged() {
   if (slider.draggable) {
