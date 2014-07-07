@@ -34,9 +34,10 @@
  1. MaKey MaKey FIRMWARE v1.4.1
  by: Eric Rosenbaum, Jay Silver, and Jim Lindblom
  http://makeymakey.com
+ Instructions for installing MaKey MaKey Arduino addon:
+ https://learn.sparkfun.com/tutorials/makey-makey-advanced-guide/installing-the-arduino-addon
  2. Adafruit Neopixel library
  http://learn.adafruit.com/adafruit-neopixel-uberguide/neomatrix-library
- 
  */
 
 /////////////////////////
@@ -90,7 +91,7 @@ Button buttons [NUM_BUTTONS];
 // NEOPIXELS ////////////
 /////////////////////////
 // http://learn.adafruit.com/adafruit-neopixel-uberguide/neomatrix-library
-// set the Neopixel pin to 18 - A0
+// set the Neopixel pin to 0 - D0
 #define NEO_PIN 0
 #include <Adafruit_NeoPixel.h>
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_BUTTONS, NEO_PIN, NEO_GRB + NEO_KHZ800);
@@ -113,43 +114,41 @@ boolean inputChanged;
 
 /*
   KEY MAPPINGS
-  0-5, pin D0 to D5
-  6 - click button pad 
+  0-5, pin D0 to D5 - pin D0 controls the Neopixels
+  6 - click button pad (unused)
   7 - space button pad
   8 - down arrow pad
+  9-11, input status LED pin numbers (? unused)
   12 - up arrow pad
   13 - left arrow pad
+  14 - pin D14 (unused)
   15 - right arrow pad
+  16 - pin D16 (controls LED that indicates when a key is pressed)
+  17 - (? unused)
   18-23, pin A0 to A5
 */
 
 int pinNumbers[NUM_INPUTS] = {        
   // Rows ///////////////////////// 
-  8,     // down arrow pad
-  15,    // right arrow pad
-  7,     // space button pad 
-  5,     // pin D5
-  4,     // pin D4
-  3,     // pin D3
-  2,     // pin D2
-  1,     // pin D1
+  8,     // row 1 = down arrow pad
+  15,    // row 2 = right arrow pad
+  7,     // row 3 = space button pad 
+  5,     // row 4 = pin D5
+  4,     // row 5 = pin D4
+  3,     // row 6 = pin D3
+  2,     // row 7 = pin D2
+  1,     // row 8 = pin D1
   // Columns ///////////////////////
-  12,     // up arrow pad
-  13,     // left arrow pad
-  18,     //A0
-  19,     //A1
-  20,     //A2
-  21,     //A3
-  22,     //A4
-  23     //A5
+  12,     // column 1 = up arrow pad
+  13,     // column 2 = left arrow pad
+  18,     // column 3 = A0
+  19,     // column 4 = A1
+  20,     // column 5 = A2
+  21,     // column 6 = A3
+  22,     // column 7 = A4
+  23      // column 8 = A5
 };
 
-/* 
-// input status LED pin numbers
-const int inputLED_a = 9;
-const int inputLED_b = 10;
-const int inputLED_c = 11;
-*/
 
 // LED that indicates when key is pressed
 const int outputK = 16;
