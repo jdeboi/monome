@@ -23,7 +23,7 @@ Jenna deBoisblanc<br>
 7 - pin A3<br>
 8 - pin A2<br>
 <br>
-* Rows
+* Rows<br>
 a - pin D5<br>
 b - pin D4<br>
 c - pin D3<br>
