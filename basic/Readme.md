@@ -1,4 +1,4 @@
-Basic Makey Makey Monome
+(basic) Makey Makey Monome
 ==============
 
 Jenna deBoisblanc<br>
