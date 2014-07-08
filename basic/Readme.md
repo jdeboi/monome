@@ -5,8 +5,9 @@ Jenna deBoisblanc<br>
 2014<br>
 [jdeboi.com](http://jdeboi.com/makey-makey-monome/)
 
-**Overview**: This  
+**Overview**: These Arduino files can be uploaded to the MaKey MaKey to make a very simple monome that generates sound using a Scratch program.  
 
+<hr>
 **Code installation**:
 
 1. Install the [Arduino IDE](http://arduino.cc/en/Main/Software) if you haven't already.
