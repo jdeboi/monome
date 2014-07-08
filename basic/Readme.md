@@ -30,8 +30,7 @@ d - pin D2<br>
 e - click button pad<br>
 f - space button pad<br>
 g - right arrow pad<br>
-h - up arrow pad<br>
-<br>
+h - up arrow pad  
 **Generating Sound**:<br>
 Use this Scratch program to make sound with your MaKey MaKey!  
   
