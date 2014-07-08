@@ -105,6 +105,7 @@ uint16_t ledHighlightOnColor = 299;
 int bufferIndex = 0;
 byte byteCounter = 0;
 byte bitCounter = 0;
+byte inByte;
 
 int pressThreshold;
 int releaseThreshold;
