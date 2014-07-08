@@ -5,12 +5,50 @@
  * http://jdeboi.com
  * June 2014
  *
- */
+ 
+  Overview: this sketch sends and receives serial data to the 
+  MaKey MaKey Monome to control sounds and LEDs. This Processing
+  sketch is also standalone, so you can mix sounds without the
+  instrument.
+ 
+  Instructions:
+  Pressing the numbers 0-9 on your keyboard toggles between 10 
+  different recording files. Switch to different files to play, 
+  record, or take snapshots.
+  
+  Keyboard shortcuts:
+  'c' - clears the monome
+  'r' - starts recording and keeps a timestamp of when you click or
+        touch a button. When you hit the play button, the monome
+        will replay the sequence of buttons based on the time at
+        which you hit them.
+  's' - a snapshot is different from a recording in that it only
+        captures the state of the monome when you hit the snapshot
+        button (i.e. can replay a sequence of button toggles)
+  'p' - plays a recording
+  
+   To add new sounds:
+   Simply replace the files in the 'audio' folder with any .wav files
+   labeled 0.wav through 9.wav. Included in the audio folder are
+   subfolders with a variety of different sounds. Copy paste those 
+   into the audio or find your own unique .wav files.
+  
+   To save recording files:
+   simply move the files in the recording directory to a new 
+   folder, and keep recording new .txt files. 
+*/
 
 
 ////////////////////////////////////////
 //VARIABLES & LIBRARIES///////////////////////
 /////////////////////////////////////////////////////
+
+// variables to keep track of buttons
+final int REC = 0;
+final int SNAP = 1;
+final int PLAY = 2;
+final int CLR = 3;
+
 // Serial for communicating with Arduino
 import processing.serial.*;
 Serial myPort;  // Create object from Serial class
@@ -195,12 +233,15 @@ void checkButtonClick() {
 ////////////////////////////////////////
 //RECORDING///////////////////////////////////
 /////////////////////////////////////////////////////
+/* 
+   a funciton that keeps track of what buttons are pushed
+   and when they're pushed so that you can replay - in time -
+   the same sounds at the corresponding time
+*/ 
 void startRecording() {
   record = true;
   startTime = millis();
-  // clear the record arrays
-  timeTriggered = new int[0];
-  buttonTriggered = new int[0];
+  clearRecordingArrays();
   // save the speed
   timeTriggered = append(timeTriggered, startTime);
   buttonTriggered = append(buttonTriggered, speed);
@@ -221,10 +262,26 @@ void stopRecording() {
   menuButtons[0].switchOff();
 }
 
+void clearRecordingArrays() {
+  timeTriggered = new int[0];
+  buttonTriggered = new int[0];
+}
 
-////////////////////////////////////////
-//SAVING//////////////////////////////////////
-/////////////////////////////////////////////////////
+void takeSnapshot() {
+  record = true;
+  startTime = millis();
+  clearRecordingArrays();
+  // save the speed
+  timeTriggered = append(timeTriggered, startTime);
+  buttonTriggered = append(buttonTriggered, speed);
+  for (int i=0; i < numButtons; i++) {
+    if (buttons[i].state) recordButton(i+1);
+  }
+  record = false;
+  saveRecording();
+}
+
+// this function saves the recording arrays to a file
 void saveRecording() {
   String[] lines = new String[timeTriggered.length];
   for (int i = 0; i < timeTriggered.length; i++) {
@@ -287,29 +344,36 @@ void checkMenuButtonClick() {
   for(int i=0; i<numMenuButtons; i++) {
     if(menuButtons[i].contains()) { 
       menuButtons[i].switchState();
-      triggerMenuButton(i, menuButtons[i].state);
+      triggerMenuButton(i);
     }
   }
 }
 
-void triggerMenuButton(int n, boolean s) {
+void triggerMenuButton(int n) {
   // record
-  if (n==0) {
-    if(s) startRecording();
-    else stopRecording();
+  if (n==REC) {
+    if(menuButtons[REC].state) startRecording();
+    else {
+      stopRecording();
+      saveRecording();
+    }
   }
-  // save
-  else if (n==1) {
-    stopRecording();
-    saveRecording();
+  // snapshot
+  else if (n==SNAP) {
+    // if we were recording, just take a recording not a snapshot
+    if (record) {
+      stopRecording();
+      saveRecording();
+    }
+    else takeSnapshot();
   }
   // play
-  else if (n==2) {
-    if(s) startPlaying();
+  else if (n==PLAY) {
+    if(menuButtons[PLAY].state) startPlaying();
     else stopPlaying();
   }
   // clear
-  else if (n==3) {
+  else if (n==CLR) {
     stopPlaying();
     stopRecording();
     resetMonome();
@@ -357,22 +421,18 @@ void keyPressed() {
     slider.setSliderVal(speed);
   }
   else if (key == 'c') {
-    resetMonome();
+    triggerMenuButton(CLR);
   }
   else if (key == 'r') {
-    if(record) record=false;
-    else startRecording();
+    menuButtons[REC].switchState();
+    triggerMenuButton(REC);
   }
   else if (key == 's') {
-    record=false;
-    saveRecording();
+    triggerMenuButton(SNAP);
   }
   else if (key == 'p') {
-    if(playing) {
-      playing = false;
-      stopPlaying();
-    }
-    else startPlaying();
+    menuButtons[PLAY].switchState();
+    triggerMenuButton(PLAY);
   }
   else if (key == '0') {
     fileIndex = 0;
@@ -440,8 +500,8 @@ void loadMenuButtons() {
   int spacing = 10;
   // record
   menuButtons[0] = new MenuButton(0, menuX, menuY, menuW, menuH, "RECORD", "icons/record0.png", "icons/record1.png");
-  // save
-  menuButtons[1] = new MenuButton(1, menuX+menuW+spacing, menuY, menuW, menuH, "SAVE", "icons/save.png", "icons/save.png");
+  // snapshot
+  menuButtons[1] = new MenuButton(1, menuX+menuW+spacing, menuY, menuW, menuH, "SNAPSHOT", "icons/save.png", "icons/save.png");
   // play
   menuButtons[2] = new MenuButton(2, menuX+2*(menuW+spacing), menuY, menuW, menuH, "PLAY", "icons/play.png", "icons/pause.png");
   // clear
