@@ -8,8 +8,7 @@ Jenna deBoisblanc<br>
 **Overview**: This  
 
 **Code installation**:
-1. First ordered list item
-2. Another item
+
 1. Install the Arduino IDE if you haven't already.
 2. Install the [Sparkfun MaKey MaKey addon](https://learn.sparkfun.com/tutorials/makey-makey-advanced-guide/installing-the-arduino-addon) in order to upload Arduino code to the MaKey MaKey board
 3. Download, open, and upload basic_makey_makey_monome.ino to the MaKey MaKey
