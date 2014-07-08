@@ -8,7 +8,6 @@ Jenna deBoisblanc<br>
 **Overview:** All the files you need to build an RBG LED backlit touchscreen MaKey MaKey Monome that interfaces with Processing - an elegant, complex visual programming language.
 <hr>
 
-####Code
 **Arduino**: contains the MaKey MaKey/Arduino code that sends serial data to the Processing sketch to generate sound and turn buttons on/off.
 
 1. Install the [Arduino IDE](http://arduino.cc/en/Main/Software) if you haven't already.
