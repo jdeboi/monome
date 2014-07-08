@@ -14,16 +14,16 @@ Jenna deBoisblanc<br>
 
 **Instructions**: Use alligator clips to connect the columns of copper tape (labeled 1 through 8) and the rows of copper tape (labeled a through h) to the MaKey MaKey pins specified below:<br>
 * Columns
-⋅⋅⋅col1 pin D1⋅⋅
-⋅⋅⋅col2 - pin D0⋅⋅
-⋅⋅⋅col3 - down arrow pad⋅⋅
-⋅⋅⋅4 - left arrow pad⋅⋅
-⋅⋅⋅5 - pin A5⋅⋅
-⋅⋅⋅6 - pin A4⋅⋅
-⋅⋅⋅7 - pin A3⋅⋅
-⋅⋅⋅8 - pin A2⋅⋅
+1 - pin D1<br>
+2 - pin D0<br>
+3 - down arrow pad<br>
+4 - left arrow pad<br>
+5 - pin A5<br>
+6 - pin A4<br>
+7 - pin A3<br>
+8 - pin A2<br>
 <br>
-Rows<br>
+*Rows
 a - pin D5<br>
 b - pin D4<br>
 c - pin D3<br>
