@@ -22,7 +22,6 @@ Jenna deBoisblanc<br>
 6 - pin A4<br>
 7 - pin A3<br>
 8 - pin A2<br>
-<br>
 * Rows<br>
 a - pin D5<br>
 b - pin D4<br>
