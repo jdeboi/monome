@@ -7,7 +7,9 @@ Jenna deBoisblanc<br>
 
 **Overview**: This  
 
-**Installation**:
+**Code installation**:
+1. First ordered list item
+2. Another item
 1. Install the Arduino IDE if you haven't already.
 2. Install the [Sparkfun MaKey MaKey addon](https://learn.sparkfun.com/tutorials/makey-makey-advanced-guide/installing-the-arduino-addon) in order to upload Arduino code to the MaKey MaKey board
 3. Download, open, and upload basic_makey_makey_monome.ino to the MaKey MaKey
@@ -31,15 +33,7 @@ e - click button pad<br>
 f - space button pad<br>
 g - right arrow pad<br>
 h - up arrow pad  
-**Generating Sound**:<br>
-Use this Scratch program to make sound with your MaKey MaKey!  
-  
-  
-4. And another item.
 
-⋅⋅⋅You can have properly indented paragraphs within list items. Notice the blank line above, and the leading spaces (at least one, but we'll use three here to also align the raw Markdown).
-
-⋅⋅⋅To have a line break without a paragraph, you will need to use two trailing spaces.⋅⋅
-⋅⋅⋅Note that this line is separate, but within the same paragraph.⋅⋅
-⋅⋅⋅(This is contrary to the typical GFM line break behaviour, where trailing spaces are not required.)
+**Generating Sound**: Use this [Scratch monome program](http://scratch.mit.edu/projects/15589252/) to make sound with your MaKey MaKey!  
   
+
