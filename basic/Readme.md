@@ -13,7 +13,7 @@ Jenna deBoisblanc<br>
 3. Download, open, and upload basic_makey_makey_monome.ino to the MaKey MaKey
 
 **Instructions**: Use alligator clips to connect the columns of copper tape (labeled 1 through 8) and the rows of copper tape (labeled a through h) to the MaKey MaKey pins specified below:<br>
-* Columns
+* Columns<br>
 1 - pin D1<br>
 2 - pin D0<br>
 3 - down arrow pad<br>
@@ -23,7 +23,7 @@ Jenna deBoisblanc<br>
 7 - pin A3<br>
 8 - pin A2<br>
 <br>
-*Rows
+* Rows
 a - pin D5<br>
 b - pin D4<br>
 c - pin D3<br>
