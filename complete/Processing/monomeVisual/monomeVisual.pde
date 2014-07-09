@@ -53,6 +53,7 @@ final int CLR = 3;
 import processing.serial.*;
 Serial myPort;  // Create object from Serial class
 int val;      // Data received from the serial port
+int useSerial = -1;
 
 // Sound 
 import ddf.minim.*;
@@ -109,11 +110,6 @@ void setup() {
   buttons = new Button[numButtons];
   menuButtons = new MenuButton[numMenuButtons];
   slider = new Slider(400, 65, 160, 15, minSpeedDelay, maxSpeedDelay, 800);
-  
-  // List all the available serial ports
-  println(Serial.list());
-  String portName = Serial.list()[0];
-  myPort = new Serial(this, portName, 9600);
  
  // initialize functions 
  loadSounds();
@@ -130,6 +126,31 @@ void setup() {
 /////////////////////////////////////////////////////
 void draw() {
   background(255);
+  if ( useSerial < 0){
+    // List all the available serial ports
+//    println(Serial.list());
+//    String portName = [0];
+    String[] ports = Serial.list();
+    int i;
+    Button[] setupButtons = new Button[ports.length+1];
+    for(i = 0; i < ports.length; i++){
+      setupButtons[i] = new Button(i, 20, 30*i+20, 20, 20);
+      fill(0);
+      text(ports[i], 50, 30*i+35);
+    }
+    setupButtons[i] = new Button(i, 20, 30*i+20, 20, 20);
+    fill(0);
+    text("No serial", 50, 30*i+35);
+    for(Button button:setupButtons) {
+      if(button.contains())
+        button.highlight = true;
+      else
+        button.highlight = false;
+      button.drawButton();
+    }
+//    myPort = new Serial(this, portName, 9600);
+    return;
+  }
   updateButtons();
   slider.drawSlider();
   drawFileNumber();
