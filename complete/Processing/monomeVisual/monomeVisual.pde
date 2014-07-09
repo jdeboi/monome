@@ -122,33 +122,54 @@ void setup() {
 }
 
 ////////////////////////////////////////
+//GET SERIAL PORT/////////////////////////////
+/////////////////////////////////////////////////////
+void getSerialPort(){
+  String[] ports = Serial.list();
+  int i;
+  int x = 20;
+  int y0 = 50;
+  fill(0);
+  text("Select serial port:", x, 30);
+  Button[] setupButtons = new Button[ports.length+1];
+  for(i = 0; i < ports.length; i++){
+    setupButtons[i] = new Button(i, x, 30*i+y0, 20, 20);
+    fill(0);
+    text(ports[i], x+30, 30*i+y0+15);
+  }
+  setupButtons[i] = new Button(i, x, 30*i+y0, 20, 20);
+  fill(0);
+  text("No serial", x+30, 30*i+y0+15);
+  delay(10);
+  for(Button button:setupButtons) {
+    if(button.contains()){
+      button.state = true;
+      button.highlight = true;
+      if(mousePressed) {
+        if( button.n == ports.length ){
+          useSerial = 0;
+          return;
+        } else {
+          myPort = new Serial(this, ports[button.n], 9600);
+        }
+      }
+    }
+    else{
+      button.state = false;
+      button.highlight = false;
+    }
+    button.drawButton();
+  }
+  return;
+}
+
+////////////////////////////////////////
 //DRAWING/////////////////////////////////////
 /////////////////////////////////////////////////////
 void draw() {
   background(255);
   if ( useSerial < 0){
-    // List all the available serial ports
-//    println(Serial.list());
-//    String portName = [0];
-    String[] ports = Serial.list();
-    int i;
-    Button[] setupButtons = new Button[ports.length+1];
-    for(i = 0; i < ports.length; i++){
-      setupButtons[i] = new Button(i, 20, 30*i+20, 20, 20);
-      fill(0);
-      text(ports[i], 50, 30*i+35);
-    }
-    setupButtons[i] = new Button(i, 20, 30*i+20, 20, 20);
-    fill(0);
-    text("No serial", 50, 30*i+35);
-    for(Button button:setupButtons) {
-      if(button.contains())
-        button.highlight = true;
-      else
-        button.highlight = false;
-      button.drawButton();
-    }
-//    myPort = new Serial(this, portName, 9600);
+    getSerialPort();
     return;
   }
   updateButtons();
@@ -200,7 +221,8 @@ void sequence()  {
   if(millis() - timeStamp > speed) {
     highlight();
     // let the Arduino know which column to highlight
-    myPort.write(column);
+    if( useSerial > 0 )
+      myPort.write(column);
     column++;
     if(column==8) column = 0;
     timeStamp = millis();
@@ -228,7 +250,7 @@ void resetMonome() {
 } 
 
 void updateButtons() {
-  if ( myPort.available() > 0) {  // If data is available,
+  if ( useSerial > 0 && myPort.available() > 0) {  // If data is available,
     val = myPort.read();         // read it and store it in val
     /* we add 1 to the button index value on the Arduino
     so that we can differentiate from a null serial transmission
