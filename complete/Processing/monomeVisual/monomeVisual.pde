@@ -53,6 +53,7 @@ final int CLR = 3;
 import processing.serial.*;
 Serial myPort;  // Create object from Serial class
 int val;      // Data received from the serial port
+int useSerial = -1;
 
 // Sound 
 import ddf.minim.*;
@@ -109,11 +110,6 @@ void setup() {
   buttons = new Button[numButtons];
   menuButtons = new MenuButton[numMenuButtons];
   slider = new Slider(400, 65, 160, 15, minSpeedDelay, maxSpeedDelay, 800);
-  
-  // List all the available serial ports
-  println(Serial.list());
-  String portName = Serial.list()[0];
-  myPort = new Serial(this, portName, 9600);
  
  // initialize functions 
  loadSounds();
@@ -126,10 +122,56 @@ void setup() {
 }
 
 ////////////////////////////////////////
+//GET SERIAL PORT/////////////////////////////
+/////////////////////////////////////////////////////
+void getSerialPort(){
+  String[] ports = Serial.list();
+  int i;
+  int x = 20;
+  int y0 = 50;
+  fill(0);
+  text("Select serial port:", x, 30);
+  Button[] setupButtons = new Button[ports.length+1];
+  for(i = 0; i < ports.length; i++){
+    setupButtons[i] = new Button(i, x, 30*i+y0, 20, 20);
+    fill(0);
+    text(ports[i], x+30, 30*i+y0+15);
+  }
+  setupButtons[i] = new Button(i, x, 30*i+y0, 20, 20);
+  fill(0);
+  text("No serial", x+30, 30*i+y0+15);
+  delay(10);
+  for(Button button:setupButtons) {
+    if(button.contains()){
+      button.state = true;
+      button.highlight = true;
+      if(mousePressed) {
+        if( button.n == ports.length ){
+          useSerial = 0;
+          return;
+        } else {
+          myPort = new Serial(this, ports[button.n], 9600);
+        }
+      }
+    }
+    else{
+      button.state = false;
+      button.highlight = false;
+    }
+    button.drawButton();
+  }
+  return;
+}
+
+////////////////////////////////////////
 //DRAWING/////////////////////////////////////
 /////////////////////////////////////////////////////
 void draw() {
   background(255);
+  if ( useSerial < 0){
+    getSerialPort();
+    return;
+  }
   updateButtons();
   slider.drawSlider();
   drawFileNumber();
@@ -179,7 +221,8 @@ void sequence()  {
   if(millis() - timeStamp > speed) {
     highlight();
     // let the Arduino know which column to highlight
-    myPort.write(column);
+    if( useSerial > 0 )
+      myPort.write(column);
     column++;
     if(column==8) column = 0;
     timeStamp = millis();
@@ -207,7 +250,7 @@ void resetMonome() {
 } 
 
 void updateButtons() {
-  if ( myPort.available() > 0) {  // If data is available,
+  if ( useSerial > 0 && myPort.available() > 0) {  // If data is available,
     val = myPort.read();         // read it and store it in val
     /* we add 1 to the button index value on the Arduino
     so that we can differentiate from a null serial transmission
