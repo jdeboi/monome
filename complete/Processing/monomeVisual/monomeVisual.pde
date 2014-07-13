@@ -53,6 +53,7 @@ final int CLR = 3;
 import processing.serial.*;
 Serial myPort;  // Create object from Serial class
 int val;      // Data received from the serial port
+int useSerial = -1;
 
 // Sound 
 import ddf.minim.*;
@@ -64,6 +65,11 @@ int numButtons = 64;
 Button[] buttons;
 int numMenuButtons = 4;
 MenuButton[] menuButtons;
+int menuX = 100;
+int menuY = 40;
+int menuW=50;
+int menuH=50;
+int spacing = 10;
 
 // window and monome dimensions
 int windowWidth = 700;
@@ -81,8 +87,6 @@ int monomeY = (windowHeight - monomeHeight)/2;
 // sequence variables
 int timeStamp;
 int tempo = 120;
-int speed = getSpeed();
-
 int column = 0;
 
 // recording variables
@@ -94,11 +98,11 @@ String[] recording;
 int index = 0;
 boolean playing = false;
 int playStartTime = 0;
-int fileIndex = 0;
+int fileIndex = 1;
 int fileLabelX = 400;
 int fileLabelY = 55;
 
-// speed slide bar
+// tempo slide bar
 Slider slider;
 int maxTempo = 1000;
 int minTempo = 60;
@@ -115,11 +119,6 @@ void setup() {
   buttons = new Button[numButtons];
   menuButtons = new MenuButton[numMenuButtons];
   slider = new Slider(sliderX, sliderY, sliderW, sliderH, minTempo, maxTempo, tempo);
-  
-  // List all the available serial ports
-  println(Serial.list());
-  String portName = Serial.list()[0];
-  myPort = new Serial(this, portName, 9600);
  
  // initialize functions 
  loadSounds();
@@ -136,6 +135,10 @@ void setup() {
 /////////////////////////////////////////////////////
 void draw() {
   background(255);
+  if ( useSerial < 0){
+    getSerialPort();
+    return;
+  }
   updateButtons();
   slider.drawSlider();
   drawFileNumber();
@@ -175,24 +178,26 @@ void drawMenuButtons() {
 void drawFileNumber() {
   fill(#434343);
   //rect(x, y-20, 100, 20);
-  fill(0);
-  text("RECORDING "+fileIndex, fileLabelX, fileLabelY);
+  fill(0,0,255);
+  text("RECORDING "+fileIndex, sliderX, sliderY-30);
 }
 
 void drawTempo() {
   fill(0);
-  text(getTempo(), sliderX+sliderW/2, sliderH);
+  text("TEMPO " + tempo, sliderX, sliderY-10);
 }
+
+//test
   
   
 ////////////////////////////////////////
 //SEQUENCER///////////////////////////////////
 /////////////////////////////////////////////////////  
 void sequence()  {
-  if(millis() - timeStamp > speed) {
+  if(millis() - timeStamp > getDelay()) {
     highlight();
     // let the Arduino know which column to highlight
-    myPort.write(column);
+    if( useSerial > 0 ) myPort.write(column);
     column++;
     if(column==8) column = 0;
     timeStamp = millis();
@@ -220,7 +225,7 @@ void resetMonome() {
 } 
 
 void updateButtons() {
-  if ( myPort.available() > 0) {  // If data is available,
+  if ( useSerial > 0 && myPort.available() > 0) {  // If data is available
     val = myPort.read();         // read it and store it in val
     /* we add 1 to the button index value on the Arduino
     so that we can differentiate from a null serial transmission
@@ -242,12 +247,8 @@ void checkButtonClick() {
   }
 }
 
-int getTempo() {
-  return int (1000.0/speed*60.0);
-}
-
-int getSpeed() {
-  return int(1000.0/(60*tempo));
+int getDelay() {
+  return int(60*1000.0/tempo);
 }
 
 ////////////////////////////////////////
@@ -262,9 +263,9 @@ void startRecording() {
   record = true;
   startTime = millis();
   clearRecordingArrays();
-  // save the speed
+  // save the tempo
   timeTriggered = append(timeTriggered, startTime);
-  buttonTriggered = append(buttonTriggered, speed);
+  buttonTriggered = append(buttonTriggered, tempo);
   for (int i=0; i < numButtons; i++) {
     if (buttons[i].state) recordButton(i+1);
   }
@@ -291,9 +292,9 @@ void takeSnapshot() {
   record = true;
   startTime = millis();
   clearRecordingArrays();
-  // save the speed
+  // save the tempo
   timeTriggered = append(timeTriggered, startTime);
-  buttonTriggered = append(buttonTriggered, speed);
+  buttonTriggered = append(buttonTriggered, tempo);
   for (int i=0; i < numButtons; i++) {
     if (buttons[i].state) recordButton(i+1);
   }
@@ -331,7 +332,7 @@ void checkPlaying() {
   if (index == 0) {
     if(recording.length>0) {
       String[] buttonEvent = split(recording[0], '\t');
-      speed = int(buttonEvent[1]);
+      tempo = int(buttonEvent[1]);
       index++;
     }
     else {
@@ -432,7 +433,7 @@ void mouseReleased() {
 void keyPressed() {
   if (keyCode == UP) {
     tempo++;
-    if (tempo>maxTempo) speed=maxTempo;
+    if (tempo>maxTempo) tempo=maxTempo;
     slider.setSliderVal(tempo);
   }
   else if (keyCode == DOWN) {
@@ -490,6 +491,49 @@ void keyPressed() {
 ////////////////////////////////////////
 //INITIALIZING////////////////////////////////
 /////////////////////////////////////////////////////
+
+// shout-out to Cole Wiley- I fudged the pull request cuz I'm a
+// GitHub newb
+void getSerialPort(){
+  String[] ports = Serial.list();
+  int i;
+  int x = 20;
+  int y0 = 50;
+  fill(0);
+  text("Select serial port:", x, 30);
+  Button[] setupButtons = new Button[ports.length+1];
+  for(i = 0; i < ports.length; i++){
+    setupButtons[i] = new Button(i, x, 30*i+y0, 20, 20);
+    fill(0);
+    text(ports[i], x+30, 30*i+y0+15);
+  }
+  setupButtons[i] = new Button(i, x, 30*i+y0, 20, 20);
+  fill(0);
+  text("No serial", x+30, 30*i+y0+15);
+  delay(10);
+  for(Button button:setupButtons) {
+    if(button.contains()){
+      button.state = true;
+      button.highlight = true;
+      if(mousePressed) {
+        if( button.n == ports.length ){
+          useSerial = 0;
+          return;
+        } else {
+          myPort = new Serial(this, ports[button.n], 9600);
+        }
+      }
+    }
+    else{
+      button.state = false;
+      button.highlight = false;
+    }
+    button.drawButton();
+  }
+  return;
+}
+
+
 void loadSounds() {
    // see minim Processing example files for explanations
   minim = new Minim(this);
@@ -513,11 +557,6 @@ void createButtons() {
 }
 
 void loadMenuButtons() {
-  int menuX = 100;
-  int menuY = 40;
-  int menuW=50;
-  int menuH=50;
-  int spacing = 10;
   // record
   menuButtons[0] = new MenuButton(0, menuX, menuY, menuW, menuH, "RECORD", "icons/record0.png", "icons/record1.png");
   // snapshot
