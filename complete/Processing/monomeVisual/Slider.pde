@@ -37,7 +37,7 @@ class Slider {
   }
   
   int getSliderVal() {
-    sliderVal = int(map(sliderPos - x,0,w, maxVal, minVal));
+    sliderVal = int(map(sliderPos - x,0,w, minVal, maxVal));
     return sliderVal;
   }
   
@@ -47,7 +47,7 @@ class Slider {
   }
   
   void updateSliderPos() {
-    sliderPos = int(map(sliderVal, maxVal, minVal, 0.0, 1.0)*w+x);
+    sliderPos = int(map(sliderVal, minVal, maxVal, 0.0, 1.0)*w+x);
   }
 }
     

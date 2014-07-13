@@ -80,7 +80,9 @@ int monomeY = (windowHeight - monomeHeight)/2;
 
 // sequence variables
 int timeStamp;
-int speed = 800;
+int tempo = 120;
+int speed = getSpeed();
+
 int column = 0;
 
 // recording variables
@@ -98,8 +100,12 @@ int fileLabelY = 55;
 
 // speed slide bar
 Slider slider;
-int maxSpeedDelay = 1000;
-int minSpeedDelay = 30;
+int maxTempo = 1000;
+int minTempo = 60;
+int sliderX = 400;
+int sliderY = 65;
+int sliderW = 160;
+int sliderH = 15;
 
 ////////////////////////////////////////
 //SETUP///////////////////////////////////////
@@ -108,7 +114,7 @@ void setup() {
   size(windowWidth, windowHeight, P3D);
   buttons = new Button[numButtons];
   menuButtons = new MenuButton[numMenuButtons];
-  slider = new Slider(400, 65, 160, 15, minSpeedDelay, maxSpeedDelay, 800);
+  slider = new Slider(sliderX, sliderY, sliderW, sliderH, minTempo, maxTempo, tempo);
   
   // List all the available serial ports
   println(Serial.list());
@@ -151,6 +157,7 @@ void drawMonome() {
   
   drawButtons();
   drawMenuButtons();
+  drawTempo();
 }
 
 void drawButtons() {
@@ -171,6 +178,12 @@ void drawFileNumber() {
   fill(0);
   text("RECORDING "+fileIndex, fileLabelX, fileLabelY);
 }
+
+void drawTempo() {
+  fill(0);
+  text(getTempo(), sliderX+sliderW/2, sliderH);
+}
+  
   
 ////////////////////////////////////////
 //SEQUENCER///////////////////////////////////
@@ -229,6 +242,13 @@ void checkButtonClick() {
   }
 }
 
+int getTempo() {
+  return int (1000.0/speed*60.0);
+}
+
+int getSpeed() {
+  return int(1000.0/(60*tempo));
+}
 
 ////////////////////////////////////////
 //RECORDING///////////////////////////////////
@@ -398,8 +418,8 @@ void mousePressed() {
 void mouseDragged() {
   if (slider.draggable) {
     slider.updateSliderPosMouse();
-    speed = slider.getSliderVal();
-    println(speed);
+    tempo = slider.getSliderVal();
+    println(tempo);
   }
 }
 
@@ -411,14 +431,14 @@ void mouseReleased() {
 
 void keyPressed() {
   if (keyCode == UP) {
-    speed-=20;
-    if (speed<minSpeedDelay) speed=minSpeedDelay;
-    slider.setSliderVal(speed);
+    tempo++;
+    if (tempo>maxTempo) speed=maxTempo;
+    slider.setSliderVal(tempo);
   }
   else if (keyCode == DOWN) {
-    speed+=20;
-    if (speed>maxSpeedDelay) speed=maxSpeedDelay;
-    slider.setSliderVal(speed);
+    tempo--;
+    if (tempo<minTempo) tempo=minTempo;
+    slider.setSliderVal(tempo);
   }
   else if (key == 'c') {
     triggerMenuButton(CLR);

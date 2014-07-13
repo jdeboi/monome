@@ -58,6 +58,7 @@ class Button {
   }
   
   void playSound() {
+    //if (n/8 == 7) sounds[7].setSampleRate(100);
     if(state) sounds[n/8].trigger();
   }
 }
