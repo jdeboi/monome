@@ -99,16 +99,14 @@ int index = 0;
 boolean playing = false;
 int playStartTime = 0;
 int fileIndex = 1;
-int fileLabelX = 400;
-int fileLabelY = 55;
 
 // tempo slide bar
 Slider slider;
-int maxTempo = 1000;
+int maxTempo = 550;
 int minTempo = 60;
 int sliderX = 400;
 int sliderY = 65;
-int sliderW = 160;
+int sliderW = monomeX + monomeWidth - sliderX;
 int sliderH = 15;
 
 ////////////////////////////////////////
@@ -178,16 +176,14 @@ void drawMenuButtons() {
 void drawFileNumber() {
   fill(#434343);
   //rect(x, y-20, 100, 20);
-  fill(0,0,255);
-  text("RECORDING "+fileIndex, sliderX, sliderY-30);
+  fill(0);
+  text("RECORDING " + fileIndex, monomeX, monomeHeight + monomeY+30);
 }
 
 void drawTempo() {
   fill(0);
   text("TEMPO " + tempo, sliderX, sliderY-10);
 }
-
-//test
   
   
 ////////////////////////////////////////
@@ -560,7 +556,7 @@ void loadMenuButtons() {
   // record
   menuButtons[0] = new MenuButton(0, menuX, menuY, menuW, menuH, "RECORD", "icons/record0.png", "icons/record1.png");
   // snapshot
-  menuButtons[1] = new MenuButton(1, menuX+menuW+spacing, menuY, menuW, menuH, "SNAPSHOT", "icons/save.png", "icons/save.png");
+  menuButtons[1] = new MenuButton(1, menuX+menuW+spacing, menuY, menuW, menuH, "SNAPSHOT", "icons/camera.png", "icons/camera.png");
   // play
   menuButtons[2] = new MenuButton(2, menuX+2*(menuW+spacing), menuY, menuW, menuH, "PLAY", "icons/play.png", "icons/pause.png");
   // clear

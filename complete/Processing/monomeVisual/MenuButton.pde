@@ -25,7 +25,7 @@ class MenuButton {
       noStroke();
       int buttonPadding = 10;
       // backlight when hovering over button
-      rect(x-(buttonPadding/2), y-(buttonPadding/2), imageDim+buttonPadding, imageDim+buttonPadding*2);
+      //rect(x-(buttonPadding/2), y-(buttonPadding/2), imageDim+buttonPadding, imageDim+buttonPadding*2);
       fill(0);
       stroke(0);
       // center button label
