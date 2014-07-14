@@ -126,6 +126,11 @@ void setup() {
  // load previous recording
  recording = loadStrings("recordings/recording0.txt");
  
+ println(Serial.list());
+ String portName = Serial.list()[5];
+ println(Serial.list()[5]);
+ useSerial = 5;
+ myPort = new Serial(this, portName, 9600);
 }
 
 ////////////////////////////////////////
@@ -133,10 +138,14 @@ void setup() {
 /////////////////////////////////////////////////////
 void draw() {
   background(255);
+  
+  /*
   if ( useSerial < 0){
     getSerialPort();
     return;
   }
+  */
+  
   updateButtons();
   slider.drawSlider();
   drawFileNumber();
@@ -193,7 +202,7 @@ void sequence()  {
   if(millis() - timeStamp > getDelay()) {
     highlight();
     // let the Arduino know which column to highlight
-    if( useSerial > 0 ) myPort.write(column);
+    if( useSerial > 0 ) myPort.write(column + 130);
     column++;
     if(column==8) column = 0;
     timeStamp = millis();
@@ -237,8 +246,14 @@ void checkButtonClick() {
   for(int i=0; i<numButtons; i++) {
     if(buttons[i].contains()) { 
       buttons[i].switchState();
-      if(buttons[i].state) recordButton(i+1);
-      else recordButton(i+65); 
+      if(buttons[i].state) {
+        if( useSerial > 0 ) myPort.write(i+1);
+        recordButton(i+1);
+      }
+      else {
+        recordButton(i+65);
+        if( useSerial > 0 ) myPort.write(i+65); 
+      }
     }
   }
 }
@@ -394,6 +409,7 @@ void triggerMenuButton(int n) {
     stopPlaying();
     stopRecording();
     resetMonome();
+    if( useSerial > 0 ) myPort.write(129);
   }
   else {}
 }
@@ -416,7 +432,6 @@ void mouseDragged() {
   if (slider.draggable) {
     slider.updateSliderPosMouse();
     tempo = slider.getSliderVal();
-    println(tempo);
   }
 }
 

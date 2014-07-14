@@ -86,6 +86,9 @@ typedef struct {
 }
 Button;
 Button buttons [NUM_BUTTONS];
+uint32_t ledColor = 0;
+uint32_t ledHighlightColor = 0;
+uint32_t ledHighlightOnColor = 0;
 
 /////////////////////////
 // NEOPIXELS ////////////
@@ -95,9 +98,6 @@ Button buttons [NUM_BUTTONS];
 #define NEO_PIN 0
 #include <Adafruit_NeoPixel.h>
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_BUTTONS, NEO_PIN, NEO_GRB + NEO_KHZ800);
-uint16_t ledColor = 255;
-uint16_t ledHighlightColor = 155;
-uint16_t ledHighlightOnColor = 299;
 
 ///////////////////////////////////
 // VARIABLES //////////////////////
@@ -116,7 +116,7 @@ boolean inputChanged;
 /*
   KEY MAPPINGS
   0-5, pin D0 to D5 - pin D0 controls the Neopixels
-  6 - click button pad (unused)
+  6 - click button pad 
   7 - space button pad
   8 - down arrow pad
   9-11, input status LED pin numbers (? unused)
@@ -134,11 +134,11 @@ int pinNumbers[NUM_INPUTS] = {
   8,     // row 1 = down arrow pad
   15,    // row 2 = right arrow pad
   7,     // row 3 = space button pad 
-  5,     // row 4 = pin D5
-  4,     // row 5 = pin D4
+  6,     // row 4 = click
+  2,     // row 5 = pin D2
   3,     // row 6 = pin D3
-  2,     // row 7 = pin D2
-  1,     // row 8 = pin D1
+  4,     // row 7 = pin D4
+  5,     // row 8 = pin D5
   // Columns ///////////////////////
   12,     // column 1 = up arrow pad
   13,     // column 2 = left arrow pad
@@ -173,7 +173,7 @@ void updateBufferIndex();
 void updateInputStates();
 void addDelay();
 void updateOutLED();
-void setNeopixel();
+void updateNeopixels();
 
 //////////////////////
 // SETUP /////////////
@@ -215,16 +215,6 @@ void initializeArduino() {
     pinMode(pinNumbers[i], INPUT);
     digitalWrite(pinNumbers[i], LOW);
   }
-
-  /* 
-  // LEDs that we aren't using... 
-  pinMode(inputLED_a, INPUT);
-  pinMode(inputLED_b, INPUT);
-  pinMode(inputLED_c, INPUT);
-  digitalWrite(inputLED_a, LOW);
-  digitalWrite(inputLED_b, LOW);
-  digitalWrite(inputLED_c, LOW);
-  */
   
   pinMode(outputK, OUTPUT);
   digitalWrite(outputK, LOW);
@@ -273,13 +263,36 @@ void initializeInputs() {
 }
 
 void checkSerialInput() {
+  /*
+    here is what the incoming serial data means
+    0 => no incoming serial data
+    1-64 => strip.setPixelColor(i, ledColor) where i is between 0-63 (turn LED on)
+    65-129 => strip.setPixelColor(i, 0) where i is between 0-63 (turn LED off)
+    129 => clear monome
+    130-137 => highlight columns 0-7
+    >138 => corresponds to a color change of the LEDs
+  */
   if (Serial.available() > 0) {
-      // get incoming byte:
-      inByte = Serial.read();
+    // get incoming byte:
+    inByte = Serial.read();
+      
+    // turn LED on
+    if (inByte < 65) {
+      buttons[inByte-1].state = true;
+      //updateNeopixels;
+    }
+    // turn LED off
+    else if (inByte > 64 && inByte < 129) {
+      buttons[inByte-65].state = false;
+      //updateNeopixels();
+    }
+    // clear monome
+    else if (inByte == 129) clearMonome();
+    // highlight column
+    else if (inByte > 129 && inByte < 138) highlightColumn(inByte - 130);
+    // change ledColor
+    //else ledColor = inByte - 138;
   }
-  if (inByte<9) highlightColumn(inByte);
-  // if the value is over 10, change the color of the LEDs
-  else ledColor = inByte;
 }
 
 ///////////////////////////
@@ -290,6 +303,7 @@ void initializeNeopixels() {
   strip.show(); // Initialize all pixels to 'off'
   rainbow(20);
   clearNeopixels();
+  setColors();
 }
 
 
@@ -410,7 +424,7 @@ void updateMonome() {
           if (!buttons[index].pressed) {
             if(!buttons[index].state) { 
               buttons[index].state = true;
-              setNeopixel(index, true);
+              updateNeopixels();
 #ifdef SERIAL9600 
               // add 1 to differentiate index from 0 bytes of serial data
               Serial.write(index+1);
@@ -423,7 +437,7 @@ void updateMonome() {
             }
             else {
               buttons[index].state = false;
-              setNeopixel(index, false);
+              updateNeopixels();
 #ifdef SERIAL9600              
               Serial.write(index+65);
 #endif  
@@ -453,21 +467,58 @@ void resetColumn(int column) {
   }
 }
 
+void clearMonome() {
+  clearNeopixels();
+  for(int i=0; i<NUM_BUTTONS; i++) {
+    buttons[i].state = false;
+    buttons[i].highlight = false;
+  }
+}
+
+void highlightColumn(int column) {
+  for (int i=0; i<8; i++) {
+    // highlight the colum; buttons that are already on get a diff color
+    buttons[column+i*8].highlight = true;
+    // turn off the column that was previously highlighted
+    if (column == 0) {
+       buttons[7+i*8].highlight = false;
+    }
+    else {
+      buttons[column-1+i*8].highlight = false;
+    }
+  }
+  updateNeopixels();
+}
 
 
 ///////////////////////////
 // UPDATE NEOPIXELS
 ///////////////////////////
-void setNeopixel(int i, boolean state) {
-  if(state) {
-    // since we zig zag Neopixels in array, test if this is an even or odd row
-    if((i/8)%2 == 0) strip.setPixelColor(i, ledColor);
-    // the math here takes into account that we're zigzagging
-    else strip.setPixelColor((i/8)*8 + 7 - (i%8), ledColor);
+void updateNeopixels() {
+  for (int i = 0; i < 64; i++) {
+    int stripIndex = getStripIndex(i);
+    if (buttons[i].state) {
+      if (buttons[i].highlight) strip.setPixelColor(stripIndex, ledHighlightOnColor);
+      else strip.setPixelColor(stripIndex, ledColor);
+    }
+    else {
+      if(buttons[i].highlight) strip.setPixelColor(stripIndex, ledHighlightColor);
+      else strip.setPixelColor(stripIndex, 0);
+    }
   }
-  else {
-    if((i/8)%2 == 0) strip.setPixelColor(i, 0);
-    else strip.setPixelColor((i/8)*8 + 7 - (i%8), 0);
+  strip.show();
+}
+
+// since we zig zag the Neopixel strip, test if this is an even or odd row
+// and return the strip index that corresponds to the monome index
+int getStripIndex(int i) {
+  if((i/8)%2 == 0) return i;
+  return (i/8)*8 + 7 - (i%8);
+}
+
+void clearNeopixels() {
+  for(int i=0; i<NUM_BUTTONS; i++) {
+    strip.setPixelColor(i, 0);
   }
   strip.show();
 }
@@ -521,6 +572,10 @@ void updateOutLED() {
   }
 }
 
+
+///////////////////////////
+// NEOPIXEL COLORS
+///////////////////////////
 // Input a value 0 to 255 to get a color value.
 // The colours are a transition r - g - b - back to r.
 uint32_t Wheel(byte WheelPos) {
@@ -537,7 +592,6 @@ uint32_t Wheel(byte WheelPos) {
 
 void rainbow(uint8_t wait) {
   uint16_t i, j;
-
   for(j=0; j<256; j++) {
     for(i=0; i<strip.numPixels(); i++) {
       strip.setPixelColor(i, Wheel((i+j) & 255));
@@ -547,42 +601,10 @@ void rainbow(uint8_t wait) {
   }
 }
 
-void clearNeopixels() {
-  for(int i=0; i<NUM_BUTTONS; i++) {
-    strip.setPixelColor(i, 0);
-  }
-  strip.show();
+void setColors() {
+  ledColor = strip.Color(255,0,0);
+  ledHighlightColor = strip.Color(0, 255, 0);
+  ledHighlightOnColor = strip.Color(0, 0, 255);
 }
 
-void clearMonome() {
-  for(int i=0; i<NUM_BUTTONS; i++) {
-    strip.setPixelColor(i, 0);
-    buttons[i].state = false;
-    buttons[i].highlight = false;
-  }
-  strip.show();
-}
-
-void highlightColumn(int column) {
-  for (int i=0; i<8; i++) {
-    
-    // highlight the colum; buttons that are already on get a diff color
-    buttons[column+i*8].highlight = true;
-    if (buttons[column+i*8].state == true) {
-      strip.setPixelColor(column+i*8, ledHighlightOnColor);
-    }
-    else strip.setPixelColor(column+i*8, ledHighlightColor);
-    
-    // turn off the column that was previously highlighted
-    if (column == 0) {
-       buttons[7+i*8].highlight = false;
-       strip.setPixelColor(7+i*8, 0);
-    }
-    else {
-      buttons[column-1+i*8].highlight = false;
-      strip.setPixelColor(column-1+i*8, 0);
-    }
-  }
-  strip.show();
-}
 
