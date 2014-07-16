@@ -89,12 +89,12 @@ int timeStamp;
 int tempo = 120;
 int column = 0;
 
-// recording variables
+// saving variables
 int[] timeTriggered = new int[0];
 int[] buttonTriggered = new int[0];
 boolean record = false;
 int startTime = 0;
-String[] recording;
+String[] file;
 int index = 0;
 boolean playing = false;
 int playStartTime = 0;
@@ -123,14 +123,9 @@ void setup() {
  loadMenuButtons();
  createButtons();
  
- // load previous recording
- recording = loadStrings("recordings/recording0.txt");
+ // load a file
+ file = loadStrings("files/file"+ fileIndex + ".txt");
  
- println(Serial.list());
- String portName = Serial.list()[5];
- println(Serial.list()[5]);
- useSerial = 5;
- myPort = new Serial(this, portName, 9600);
 }
 
 ////////////////////////////////////////
@@ -139,12 +134,11 @@ void setup() {
 void draw() {
   background(255);
   
-  /*
   if ( useSerial < 0){
     getSerialPort();
+    println(useSerial);
     return;
   }
-  */
   
   updateButtons();
   slider.drawSlider();
@@ -186,7 +180,7 @@ void drawFileNumber() {
   fill(#434343);
   //rect(x, y-20, 100, 20);
   fill(0);
-  text("RECORDING " + fileIndex, monomeX, monomeHeight + monomeY+30);
+  text("FILE " + fileIndex, monomeX, monomeHeight + monomeY+30);
 }
 
 void drawTempo() {
@@ -319,8 +313,8 @@ void saveRecording() {
   for (int i = 0; i < timeTriggered.length; i++) {
     lines[i] = timeTriggered[i] + "\t" + buttonTriggered[i];
   }
-  String recordingFileName = "recordings/recording" + fileIndex + ".txt";
-  saveStrings(recordingFileName, lines);
+  String fileName = "files/file" + fileIndex + ".txt";
+  saveStrings(fileName, lines);
 }
 
 
@@ -334,15 +328,15 @@ void startPlaying() {
   index = 0;
   playStartTime = millis();
   playing = true;
-  String recordingFileName = "recordings/recording" + fileIndex + ".txt";
-  if(fileExists(recordingFileName)) recording = loadStrings(recordingFileName);
+  String fileName = "files/file" + fileIndex + ".txt";
+  if(fileExists(fileName)) file = loadStrings(fileName);
   else stopPlaying();
 }
 
 void checkPlaying() {
   if (index == 0) {
-    if(recording.length>0) {
-      String[] buttonEvent = split(recording[0], '\t');
+    if(file.length>0) {
+      String[] buttonEvent = split(file[0], '\t');
       tempo = int(buttonEvent[1]);
       index++;
     }
@@ -350,8 +344,8 @@ void checkPlaying() {
       stopPlaying();
     }
   }
-  else if (index < recording.length) {
-    String[] buttonEvent = split(recording[index], '\t');
+  else if (index < file.length) {
+    String[] buttonEvent = split(file[index], '\t');
     if (millis() - playStartTime > int(buttonEvent[0])) {
       int value = int(buttonEvent[1]);
       if (value > 64) buttons[value-65].switchOff();
@@ -531,7 +525,9 @@ void getSerialPort(){
           useSerial = 0;
           return;
         } else {
+          useSerial = button.n;
           myPort = new Serial(this, ports[button.n], 9600);
+          return;
         }
       }
     }

@@ -6,7 +6,8 @@ class Button {
   boolean highlight;
   color onColor = #A5FF31;
   color offColor = #31FFB2;
-  color highlightColor = #8ED62B;
+  color highlightColor = #2BD6C9;
+  color highlightOnColor = #8ED62B;
   
   Button(int num, int xpos, int ypos, int wd, int ht) {
     n = num;
@@ -21,12 +22,13 @@ class Button {
   
   void drawButton() {
     stroke(55);
-    if (state) {
-      if(highlight) fill(highlightColor);
-      else fill(onColor);
+    if (highlight) {
+      if (state) fill(highlightOnColor);
+      else fill(highlightColor);
     }
     else {
-      fill(offColor);
+      if (state)fill(onColor);
+      else fill(offColor);
     }
     rect(x, y, w, h);
   }
