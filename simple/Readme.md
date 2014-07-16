@@ -1,4 +1,4 @@
-(basic) Makey Makey Monome
+Simple Makey Makey Monome
 ==============
 
 Jenna deBoisblanc<br>
@@ -12,7 +12,7 @@ Jenna deBoisblanc<br>
 
 1. Install the [Arduino IDE](http://arduino.cc/en/Main/Software) if you haven't already.
 2. Install the [Sparkfun MaKey MaKey addon](https://learn.sparkfun.com/tutorials/makey-makey-advanced-guide/installing-the-arduino-addon) in order to upload Arduino code to the MaKey MaKey board.
-3. Upload basic_makey_makey_monome.ino to the MaKey MaKey.
+3. Upload simple_makey_makey_monome.ino to the MaKey MaKey.
 
 ###MaKey MaKey
 Use alligator clips to connect the columns of copper tape (labeled 1 through 8) and the rows of copper tape (labeled a through h) to the MaKey MaKey pins specified below:<br>
