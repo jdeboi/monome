@@ -102,10 +102,10 @@ int fileIndex = 1;
 
 // tempo slide bar
 Slider slider;
-int maxTempo = 550;
+int maxTempo = 400;
 int minTempo = 60;
 int sliderX = 400;
-int sliderY = 65;
+int sliderY = 75;
 int sliderW = monomeX + monomeWidth - sliderX;
 int sliderH = 15;
 
@@ -180,11 +180,13 @@ void drawFileNumber() {
   fill(#434343);
   //rect(x, y-20, 100, 20);
   fill(0);
-  text("FILE " + fileIndex, monomeX, monomeHeight + monomeY+30);
+  textSize(12);
+  text("FILE " + fileIndex, sliderX, sliderY-30);
 }
 
 void drawTempo() {
   fill(0);
+  textSize(12);
   text("TEMPO " + tempo, sliderX, sliderY-10);
 }
   
@@ -220,6 +222,7 @@ void highlight() {
 void resetMonome() {
   for (int i=0; i< numButtons; i++) {
    buttons[i].switchOff();
+   sendToMonome(i);
   }
 } 
 
@@ -240,14 +243,8 @@ void checkButtonClick() {
   for(int i=0; i<numButtons; i++) {
     if(buttons[i].contains()) { 
       buttons[i].switchState();
-      if(buttons[i].state) {
-        if( useSerial > 0 ) myPort.write(i+1);
-        recordButton(i+1);
-      }
-      else {
-        recordButton(i+65);
-        if( useSerial > 0 ) myPort.write(i+65); 
-      }
+      recordButton(i);
+      sendToMonome(i);
     }
   }
 }
@@ -278,8 +275,11 @@ void startRecording() {
 
 void recordButton(int button) {
   if(record) {
+    int val;
+    if (buttons[button].state) val = button+1;
+    else val = button + 65;
     timeTriggered = append(timeTriggered, millis() - startTime);
-    buttonTriggered = append(buttonTriggered, button);
+    buttonTriggered = append(buttonTriggered, val);
   }  
 }
 
@@ -301,7 +301,7 @@ void takeSnapshot() {
   timeTriggered = append(timeTriggered, startTime);
   buttonTriggered = append(buttonTriggered, tempo);
   for (int i=0; i < numButtons; i++) {
-    if (buttons[i].state) recordButton(i+1);
+    if (buttons[i].state) recordButton(i);
   }
   record = false;
   saveRecording();
@@ -348,8 +348,16 @@ void checkPlaying() {
     String[] buttonEvent = split(file[index], '\t');
     if (millis() - playStartTime > int(buttonEvent[0])) {
       int value = int(buttonEvent[1]);
-      if (value > 64) buttons[value-65].switchOff();
-      else if (value > 0) buttons[value-1].switchOn();
+      if (value > 64) {
+        buttons[value-65].switchOff();
+        sendToMonome(value-65);
+      }
+      else if (value > 0) {
+        buttons[value-1].switchOn();
+        sendToMonome(value-1);
+      }
+      
+      
       // Go to the next line for the next run through draw()
       index++;
     }
@@ -403,7 +411,7 @@ void triggerMenuButton(int n) {
     stopPlaying();
     stopRecording();
     resetMonome();
-    if( useSerial > 0 ) myPort.write(129);
+    //if( useSerial > 0 ) myPort.write(129);
   }
   else {}
 }
@@ -573,3 +581,12 @@ void loadMenuButtons() {
   // clear
   menuButtons[3] = new MenuButton(3, menuX+3*(menuW+spacing), menuY, menuW, menuH,"RESET", "icons/reset.png", "icons/reset.png");
 }
+
+
+void sendToMonome(int b) {
+  if( useSerial > 0 ) {
+    if(buttons[b].state) myPort.write(b+1);
+    else myPort.write(b+65); 
+  }
+}
+

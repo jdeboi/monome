@@ -602,9 +602,9 @@ void rainbow(uint8_t wait) {
 }
 
 void setColors() {
-  ledColor = strip.Color(255,0,0);
-  ledHighlightColor = strip.Color(0, 255, 0);
-  ledHighlightOnColor = strip.Color(0, 0, 255);
+  ledColor = strip.Color(10, 255, 79);
+  ledHighlightColor = strip.Color(23, 114, 255);
+  ledHighlightOnColor = strip.Color(10, 255, 79);
 }
 
 
