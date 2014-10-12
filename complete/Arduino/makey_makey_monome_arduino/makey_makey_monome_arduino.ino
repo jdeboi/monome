@@ -277,19 +277,19 @@ void checkSerialInput() {
     inByte = Serial.read();
       
     // turn LED on
-    if (inByte < NUM_BUTTONS + 1) {
+    if (inByte < 65) {
       buttons[inByte-1].state = true;
       //updateNeopixels;
     }
     // turn LED off
-    else if (inByte > NUM_BUTTONS && inByte < NUM_BUTTONS*2 + 1) {
-      buttons[inByte-(NUM_BUTTONS+1)].state = false;
+    else if (inByte > 64 && inByte < 129) {
+      buttons[inByte-65].state = false;
       //updateNeopixels();
     }
     // clear monome
-    else if (inByte == NUM_BUTTONS*2 + 1) clearMonome();
+    else if (inByte == 129) clearMonome();
     // highlight column
-    else if (inByte > NUM_BUTTONS*2+1 && inByte < (NUM_BUTTONS)*2+2+NUM_COLUMNS) highlightColumn(inByte-(NUM_BUTTONS*2+2));
+    else if (inByte > 129 && inByte < 138) highlightColumn(inByte - 130);
     // change ledColor
     //else ledColor = inByte - 138;
   }
@@ -416,11 +416,11 @@ void updateInputStates() {
 // UPDATE MONOME
 ///////////////////////////
 void updateMonome() {
-  for(int i=0; i< NUM_ROWS; i++) {
+  for(int i=0; i<8; i++) {
     if(inputs[i].pressed){
-      for(int j=0; j< NUM_COLUMNS; j++) {
-        if(inputs[j+ NUM_ROWS].pressed) {
-          int index = i*NUM_COLUMNS + j;
+      for(int j=0; j<8; j++) {
+        if(inputs[j+8].pressed) {
+          int index = i*8 + j;
           if (!buttons[index].pressed) {
             if(!buttons[index].state) { 
               buttons[index].state = true;
@@ -439,7 +439,7 @@ void updateMonome() {
               buttons[index].state = false;
               updateNeopixels();
 #ifdef SERIAL9600              
-              Serial.write(index+1+NUM_BUTTONS);
+              Serial.write(index+65);
 #endif  
 #ifdef DEBUG_MONOME
               Serial.print("button ");
@@ -456,14 +456,14 @@ void updateMonome() {
 }
 
 void resetRow(int rowNum) {
-  for(int i=(rowNum*NUM_COLUMNS); i<(rowNum*NUM_COLUMNS+NUM_COLUMNS); i++) {
+  for(int i=(rowNum*8); i<(rowNum*8+8); i++) {
     buttons[i].pressed = false;
   }
 }
 
 void resetColumn(int column) {
-  for(int i=column; i<NUM_COLUMNS; i++) {
-    buttons[i*NUM_COLUMNS+column].pressed = false;
+  for(int i=column; i<8; i++) {
+    buttons[i*8+column].pressed = false;
   }
 }
 
@@ -476,15 +476,15 @@ void clearMonome() {
 }
 
 void highlightColumn(int column) {
-  for (int i=0; i<NUM_COLUMNS; i++) {
+  for (int i=0; i<8; i++) {
     // highlight the colum; buttons that are already on get a diff color
-    buttons[column+i*NUM_COLUMNS].highlight = true;
+    buttons[column+i*8].highlight = true;
     // turn off the column that was previously highlighted
     if (column == 0) {
-       buttons[(NUM_COLUMNS-1)+i*NUM_COLUMNS].highlight = false;
+       buttons[7+i*8].highlight = false;
     }
     else {
-      buttons[column-1+i*NUM_COLUMNS].highlight = false;
+      buttons[column-1+i*8].highlight = false;
     }
   }
   updateNeopixels();
@@ -495,7 +495,7 @@ void highlightColumn(int column) {
 // UPDATE NEOPIXELS
 ///////////////////////////
 void updateNeopixels() {
-  for (int i = 0; i < NUM_BUTTONS; i++) {
+  for (int i = 0; i < 64; i++) {
     int stripIndex = getStripIndex(i);
     if (buttons[i].state) {
       if (buttons[i].highlight) strip.setPixelColor(stripIndex, ledHighlightOnColor);
@@ -512,8 +512,8 @@ void updateNeopixels() {
 // since we zig zag the Neopixel strip, test if this is an even or odd row
 // and return the strip index that corresponds to the monome index
 int getStripIndex(int i) {
-  if((i/NUM_ROWS)%2 == 0) return i;
-  return (i/NUM_ROWS)*NUM_ROWS + NUM_COLUMNS - 1 - (i%NUM_COLUMNS);
+  if((i/8)%2 == 0) return i;
+  return (i/8)*8 + 7 - (i%8);
 }
 
 void clearNeopixels() {

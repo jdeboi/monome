@@ -579,7 +579,7 @@ void loadMenuButtons() {
   // play
   menuButtons[2] = new MenuButton(2, menuX+2*(menuW+spacing), menuY, menuW, menuH, "PLAY", "icons/play.png", "icons/pause.png");
   // clear
-  menuButtons[3] = new MenuButton(3, menuX+3*(menuW+spacing), menuY, menuW, menuH,"RESET", "icons/reset.png", "icons/reset.png");
+  menuButtons[3] = new MenuButton(3, menuX+3*(menuW+spacing), menuY, menuW, menuH,"CLEAR", "icons/reset.png", "icons/reset.png");
 }
 
 
