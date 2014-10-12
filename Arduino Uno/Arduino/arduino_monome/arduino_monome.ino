@@ -1,13 +1,11 @@
 /*
  ************************************************
- ********** MAKEY MAKEY PAPER MONOME ************
+ ********* CONDUCTIVE ARDUINO MONOME ************
  ************************************************
  //MAKER////////////
  Jenna deBoisblanc
  http://jdeboi.com
- start date: January 2014
- Instructable:
- GitHub repo:
+ start date: October 2014
  
  //DESCRIPTION//////
  My objective for this project was to build a monome- http://monome.org/ -
@@ -15,28 +13,22 @@
  to compose electronic music or mix video) using tools and processes 
  that were so simple, a third grader could build it.
  
- The Makey Makey turns conductive objects- in my case, conductive paint patches- 
- into keyboard input. The board, however, only has less than 24 iniputs, and I wanted to 
- build an 8x8 monome = 64 buttons. My solution was to hook 8 alligator clips to columns, 
- 8 to rows, and when the intersection of a row and column was pressed, a monome button
- changes states,
+ This sketch relies on capacitive sensors (copper tape attached to Arduino pins
+ using jumpers). Sound is produced by the monomeVisual Processing sketch.
  
  I used Adafruit Neopixels- RGB LEDs that are individually addressible but only 
  need 1 digital out- arranged in an 8x8 zigzag matrix to light up the squares when 
  pressed.
  
  //CREDIT///////////
- Special thanks to Kevin Matulef for his Makey Makey and 
- Amanda Ghassaei, one of my best friends, for introducing
+ Special thanks to Amanda Ghassaei, one of my best friends, for introducing
  me to monomes and the Maker Movement.
  
- Code adapted from:
+ Code shout-outs:
  1. MaKey MaKey FIRMWARE v1.4.1
- by: Eric Rosenbaum, Jay Silver, and Jim Lindblom
- http://makeymakey.com
- Instructions for installing MaKey MaKey Arduino addon:
- https://learn.sparkfun.com/tutorials/makey-makey-advanced-guide/installing-the-arduino-addon
- 2. Adafruit Neopixel library
+ by: Eric Rosenbaum, Jay Silver, and Jim Lindblom http://makeymakey.com
+ 2. Capacitive sensor code: http://playground.arduino.cc/Code/CapacitiveSensor
+ 3. Adafruit Neopixel library
  http://learn.adafruit.com/adafruit-neopixel-uberguide/neomatrix-library
  */
 
@@ -52,12 +44,10 @@
 ////////////////////////
 // DEFINED CONSTANTS////
 ////////////////////////
-#define BUFFER_LENGTH    3     // 3 bytes gives us 24 samples
 #define NUM_ROWS         8
 #define NUM_COLUMNS      8
 #define NUM_INPUTS       NUM_ROWS+NUM_COLUMNS      // 8 rows, 8 columns
 #define NUM_BUTTONS      NUM_ROWS * NUM_COLUMNS    // 64 buttons
-#define TARGET_LOOP_TIME 744  // (1/56 seconds) / 24 samples = 744 microseconds per sample 
 
 #define SERIAL9600
 #include "settings.h"
@@ -69,9 +59,7 @@ typedef struct {
   byte pinNumber;
   int keyCode;
   int timePressed;
-  byte measurementBuffer[BUFFER_LENGTH]; 
-  boolean oldestMeasurement;
-  byte bufferSum;
+  float movingAverage;
   boolean pressed;
   boolean prevPressed;
 } 
@@ -90,69 +78,45 @@ uint32_t ledColor = 0;
 uint32_t ledHighlightColor = 0;
 uint32_t ledHighlightOnColor = 0;
 
+/*
 /////////////////////////
 // NEOPIXELS ////////////
 /////////////////////////
 // http://learn.adafruit.com/adafruit-neopixel-uberguide/neomatrix-library
 // set the Neopixel pin to 0 - D0
-#define NEO_PIN 0
+#define NEO_PIN 12
 #include <Adafruit_NeoPixel.h>
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_BUTTONS, NEO_PIN, NEO_GRB + NEO_KHZ800);
+*/
+
 
 ///////////////////////////////////
 // VARIABLES //////////////////////
 ///////////////////////////////////
-int bufferIndex = 0;
-byte byteCounter = 0;
-byte bitCounter = 0;
+float movingAverageFactor = 1;
 byte inByte;
 
-int pressThreshold;
-int releaseThreshold;
+float pressThreshold = 4.5;
+float releaseThreshold = 3.6;
 int triggerThresh = 200;
 boolean inputChanged;
 
-
-/*
-  KEY MAPPINGS
-  0-5, pin D0 to D5 - pin D0 controls the Neopixels
-  6 - click button pad 
-  7 - space button pad
-  8 - down arrow pad
-  9-11, input status LED pin numbers (? unused)
-  12 - up arrow pad
-  13 - left arrow pad
-  14 - pin D14 (unused)
-  15 - right arrow pad
-  16 - pin D16 (controls LED that indicates when a key is pressed)
-  17 - (? unused)
-  18-23, pin A0 to A5
-*/
-
 int pinNumbers[NUM_INPUTS] = {        
   // Rows ///////////////////////// 
-  8,     // row 1 = down arrow pad
-  15,    // row 2 = right arrow pad
-  7,     // row 3 = space button pad 
-  6,     // row 4 = click
-  2,     // row 5 = pin D2
-  3,     // row 6 = pin D3
-  4,     // row 7 = pin D4
-  5,     // row 8 = pin D5
+  2,    
+  3,    
+  4,    
+  5,      
   // Columns ///////////////////////
-  12,     // column 1 = up arrow pad
-  13,     // column 2 = left arrow pad
-  18,     // column 3 = A0
-  19,     // column 4 = A1
-  20,     // column 5 = A2
-  21,     // column 6 = A3
-  22,     // column 7 = A4
-  23      // column 8 = A5
+  9,     
+  8,     
+  7,     
+  6     
 };
 
 
 // LED that indicates when key is pressed
-const int outputK = 16;
+const int outputK = 13;
 byte ledCycleCounter = 0;
 
 // timing
@@ -165,11 +129,9 @@ int loopCounter = 0;
 // FUNCTIONS //////////////
 ///////////////////////////
 void initializeArduino();
-void initializeInputs();
+void initializeInputs(); 
 void initializeNeopixels();
-void updateMeasurementBuffers();
-void updateBufferSums();
-void updateBufferIndex();
+void updateMovingAverage();
 void updateInputStates();
 void addDelay();
 void updateOutLED();
@@ -192,12 +154,9 @@ void setup()
 void loop() 
 { 
   checkSerialInput();
-  updateMeasurementBuffers();
-  updateBufferSums();
-  updateBufferIndex();
+  updateMovingAverage();
   updateInputStates();
   updateOutLED();
-  addDelay();
 }
 
 //////////////////////////
@@ -230,28 +189,11 @@ void initializeArduino() {
 ///////////////////////////
 void initializeInputs() {
 
-  float thresholdPerc = SWITCH_THRESHOLD_OFFSET_PERC;
-  float thresholdCenterBias = SWITCH_THRESHOLD_CENTER_BIAS/50.0;
-  float pressThresholdAmount = (BUFFER_LENGTH * 8) * (thresholdPerc / 100.0);
-  float thresholdCenter = ( (BUFFER_LENGTH * 8) / 2.0 ) * (thresholdCenterBias);
-  pressThreshold = int(thresholdCenter + pressThresholdAmount);
-  releaseThreshold = int(thresholdCenter - pressThresholdAmount);
-
-#ifdef DEBUG
-  Serial.println(pressThreshold);
-  Serial.println(releaseThreshold);
-#endif
-
   for (int i=0; i<NUM_INPUTS; i++) {
     inputs[i].pinNumber = pinNumbers[i];
     inputs[i].keyCode = keyCodes[i];
-
-    for (int j=0; j<BUFFER_LENGTH; j++) {
-      inputs[i].measurementBuffer[j] = 0;
-    }
-    inputs[i].oldestMeasurement = 0;
-    inputs[i].bufferSum = 0;
-
+    inputs[i].movingAverage = 0;
+    
     inputs[i].pressed = false;
     inputs[i].prevPressed = false;
 
@@ -277,23 +219,24 @@ void checkSerialInput() {
     inByte = Serial.read();
       
     // turn LED on
-    if (inByte < 65) {
+    if (inByte < NUM_BUTTONS + 1) {
       buttons[inByte-1].state = true;
       //updateNeopixels;
     }
     // turn LED off
-    else if (inByte > 64 && inByte < 129) {
-      buttons[inByte-65].state = false;
+    else if (inByte > NUM_BUTTONS && inByte < NUM_BUTTONS*2 + 1) {
+      buttons[inByte-(NUM_BUTTONS+1)].state = false;
       //updateNeopixels();
     }
     // clear monome
-    else if (inByte == 129) clearMonome();
+    else if (inByte == NUM_BUTTONS*2 + 1) clearMonome();
     // highlight column
-    else if (inByte > 129 && inByte < 138) highlightColumn(inByte - 130);
+    else if (inByte > NUM_BUTTONS*2+1 && inByte < (NUM_BUTTONS)*2+2+NUM_COLUMNS) highlightColumn(inByte-(NUM_BUTTONS*2+2));
     // change ledColor
-    //else ledColor = inByte - 138;
+    //else ledColor = inByte - NUM_BUTTONS*2+2+NUM_COLUMNS;
   }
 }
+
 
 ///////////////////////////
 // INITIALIZE Neopixels
@@ -307,71 +250,6 @@ void initializeNeopixels() {
 }
 
 
-
-//////////////////////////////
-// UPDATE MEASUREMENT BUFFERS
-//////////////////////////////
-void updateMeasurementBuffers() {
-
-  for (int i=0; i<NUM_INPUTS; i++) {
-
-    // store the oldest measurement, which is the one at the current index,
-    // before we update it to the new one 
-    // we use oldest measurement in updateBufferSums
-    byte currentByte = inputs[i].measurementBuffer[byteCounter];
-    inputs[i].oldestMeasurement = (currentByte >> bitCounter) & 0x01; 
-
-    // make the new measurement
-    boolean newMeasurement = digitalRead(inputs[i].pinNumber);
-
-    // invert so that true means the switch is closed, i.e. touched
-    newMeasurement = !newMeasurement; 
-
-    // store it    
-    if (newMeasurement) {
-      currentByte |= (1<<bitCounter);
-    } 
-    else {
-      currentByte &= ~(1<<bitCounter);
-    }
-    inputs[i].measurementBuffer[byteCounter] = currentByte;
-  }
-}
-
-///////////////////////////
-// UPDATE BUFFER SUMS
-///////////////////////////
-void updateBufferSums() {
-
-  // the bufferSum is a running tally of the entire measurementBuffer
-  // add the new measurement and subtract the old one
-
-  for (int i=0; i<NUM_INPUTS; i++) {
-    byte currentByte = inputs[i].measurementBuffer[byteCounter];
-    boolean currentMeasurement = (currentByte >> bitCounter) & 0x01; 
-    if (currentMeasurement) {
-      inputs[i].bufferSum++;
-    }
-    if (inputs[i].oldestMeasurement) {
-      inputs[i].bufferSum--;
-    }
-  }  
-}
-
-///////////////////////////
-// UPDATE BUFFER INDEX
-///////////////////////////
-void updateBufferIndex() {
-  bitCounter++;
-  if (bitCounter == 8) {
-    bitCounter = 0;
-    byteCounter++;
-    if (byteCounter == BUFFER_LENGTH) {
-      byteCounter = 0;
-    }
-  }
-}
-
 ///////////////////////////
 // UPDATE INPUT STATES
 ///////////////////////////
@@ -380,7 +258,7 @@ void updateInputStates() {
   for (int i=0; i<NUM_INPUTS; i++) {
     inputs[i].prevPressed = inputs[i].pressed; // store previous pressed state (only used for mouse buttons)
     if (inputs[i].pressed) {
-      if (inputs[i].bufferSum < releaseThreshold) {  
+      if (inputs[i].movingAverage < releaseThreshold) {  
         inputChanged = true;
         inputs[i].pressed = false;
                
@@ -391,13 +269,13 @@ void updateInputStates() {
         between the two keys. Effect: LED cell that flickers on/off rather than solid color.
         */
         
-        if(i<8) resetRow(i);
+        if(i< NUM_ROWS) resetRow(i);
         else resetColumn(i);
         updateMonome();
       }
     } 
     else if (!inputs[i].pressed) {
-      if (inputs[i].bufferSum > pressThreshold) {  // input becomes pressed
+      if (inputs[i].movingAverage > pressThreshold) {  // input becomes pressed
         inputChanged = true;
         inputs[i].pressed = true; 
         updateMonome(); 
@@ -416,18 +294,20 @@ void updateInputStates() {
 // UPDATE MONOME
 ///////////////////////////
 void updateMonome() {
-  for(int i=0; i<8; i++) {
+  for(int i=0; i< NUM_ROWS; i++) {
     if(inputs[i].pressed){
-      for(int j=0; j<8; j++) {
-        if(inputs[j+8].pressed) {
-          int index = i*8 + j;
+      for(int j=0; j< NUM_COLUMNS; j++) {
+        // in original monome, input[0]-input[7] were rows, input[8]-input[15] were columns
+        if(inputs[j+ NUM_ROWS].pressed) {
+          int index = i*NUM_COLUMNS + j;
           if (!buttons[index].pressed) {
             if(!buttons[index].state) { 
               buttons[index].state = true;
               updateNeopixels();
 #ifdef SERIAL9600 
               // add 1 to differentiate index from 0 bytes of serial data
-              Serial.write(index+1);
+              byte passVal = index+1;
+              Serial.write(passVal);
 #endif              
 #ifdef DEBUG_MONOME
               Serial.print("button ");
@@ -437,9 +317,10 @@ void updateMonome() {
             }
             else {
               buttons[index].state = false;
-              updateNeopixels();
-#ifdef SERIAL9600              
-              Serial.write(index+65);
+              // updateNeopixels();
+#ifdef SERIAL9600  
+              byte passVal = index+1+NUM_BUTTONS;
+              Serial.write(passVal);
 #endif  
 #ifdef DEBUG_MONOME
               Serial.print("button ");
@@ -456,14 +337,14 @@ void updateMonome() {
 }
 
 void resetRow(int rowNum) {
-  for(int i=(rowNum*8); i<(rowNum*8+8); i++) {
+  for(int i=(rowNum*NUM_COLUMNS); i<(rowNum*NUM_COLUMNS+NUM_COLUMNS); i++) {
     buttons[i].pressed = false;
   }
 }
 
 void resetColumn(int column) {
-  for(int i=column; i<8; i++) {
-    buttons[i*8+column].pressed = false;
+  for(int i=column; i<NUM_COLUMNS; i++) {
+    buttons[i*NUM_COLUMNS+column].pressed = false;
   }
 }
 
@@ -476,15 +357,15 @@ void clearMonome() {
 }
 
 void highlightColumn(int column) {
-  for (int i=0; i<8; i++) {
+  for (int i=0; i<NUM_COLUMNS; i++) {
     // highlight the colum; buttons that are already on get a diff color
-    buttons[column+i*8].highlight = true;
+    buttons[column+i*NUM_COLUMNS].highlight = true;
     // turn off the column that was previously highlighted
     if (column == 0) {
-       buttons[7+i*8].highlight = false;
+       buttons[(NUM_COLUMNS-1)+i*NUM_COLUMNS].highlight = false;
     }
     else {
-      buttons[column-1+i*8].highlight = false;
+      buttons[column-1+i*NUM_COLUMNS].highlight = false;
     }
   }
   updateNeopixels();
@@ -523,30 +404,6 @@ void clearNeopixels() {
   strip.show();
 }
 
-///////////////////////////
-// ADD DELAY
-///////////////////////////
-void addDelay() {
-
-  loopTime = micros() - prevTime;
-  if (loopTime < TARGET_LOOP_TIME) {
-    int wait = TARGET_LOOP_TIME - loopTime;
-    delayMicroseconds(wait);
-  }
-
-  prevTime = micros();
-
-#ifdef DEBUG_TIMING
-  if (loopCounter == 0) {
-    int t = micros()-prevTime;
-    Serial.println(t);
-  }
-  loopCounter++;
-  loopCounter %= 999;
-#endif
-
-}
-
 
 ///////////////////////////
 // UPDATE OUT LED
@@ -578,6 +435,8 @@ void updateOutLED() {
 ///////////////////////////
 // Input a value 0 to 255 to get a color value.
 // The colours are a transition r - g - b - back to r.
+
+
 uint32_t Wheel(byte WheelPos) {
   if(WheelPos < 85) {
    return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
@@ -607,4 +466,75 @@ void setColors() {
   ledHighlightOnColor = strip.Color(10, 255, 79);
 }
 
+
+///////////////////////////
+// CAPACITIVE SENSORS
+///////////////////////////
+uint8_t readCapacitivePin(int pinToMeasure) {
+  // Variables used to translate from Arduino to AVR pin naming
+  volatile uint8_t* port;
+  volatile uint8_t* ddr;
+  volatile uint8_t* pin;
+  // Here we translate the input pin number from
+  //  Arduino pin number to the AVR PORT, PIN, DDR,
+  //  and which bit of those registers we care about.
+  byte bitmask;
+  port = portOutputRegister(digitalPinToPort(pinToMeasure));
+  ddr = portModeRegister(digitalPinToPort(pinToMeasure));
+  bitmask = digitalPinToBitMask(pinToMeasure);
+  pin = portInputRegister(digitalPinToPort(pinToMeasure));
+  // Discharge the pin first by setting it low and output
+  *port &= ~(bitmask);
+  *ddr  |= bitmask;
+  delay(1);
+  // Prevent the timer IRQ from disturbing our measurement
+  noInterrupts();
+  // Make the pin an input with the internal pull-up on
+  *ddr &= ~(bitmask);
+  *port |= bitmask;
+
+  // Now see how long the pin to get pulled up. This manual unrolling of the loop
+  // decreases the number of hardware cycles between each read of the pin,
+  // thus increasing sensitivity.
+  uint8_t cycles = 17;
+       if (*pin & bitmask) { cycles =  0;}
+  else if (*pin & bitmask) { cycles =  1;}
+  else if (*pin & bitmask) { cycles =  2;}
+  else if (*pin & bitmask) { cycles =  3;}
+  else if (*pin & bitmask) { cycles =  4;}
+  else if (*pin & bitmask) { cycles =  5;}
+  else if (*pin & bitmask) { cycles =  6;}
+  else if (*pin & bitmask) { cycles =  7;}
+  else if (*pin & bitmask) { cycles =  8;}
+  else if (*pin & bitmask) { cycles =  9;}
+  else if (*pin & bitmask) { cycles = 10;}
+  else if (*pin & bitmask) { cycles = 11;}
+  else if (*pin & bitmask) { cycles = 12;}
+  else if (*pin & bitmask) { cycles = 13;}
+  else if (*pin & bitmask) { cycles = 14;}
+  else if (*pin & bitmask) { cycles = 15;}
+  else if (*pin & bitmask) { cycles = 16;}
+
+  // End of timing-critical section
+  interrupts();
+
+  // Discharge the pin again by setting it low and output
+  //  It's important to leave the pins low if you want to 
+  //  be able to touch more than 1 sensor at a time - if
+  //  the sensor is left pulled high, when you touch
+  //  two sensors, your body will transfer the charge between
+  //  sensors.
+  *port &= ~(bitmask);
+  *ddr  |= bitmask;
+
+  return cycles;
+}
+
+void updateMovingAverage() {
+  for(int i = 0; i < NUM_INPUTS; i++) {
+    int cycles = readCapacitivePin(pinNumbers[i]);
+    int mave = inputs[i].movingAverage;
+    inputs[i].movingAverage = mave * (1.0 - movingAverageFactor) + cycles * movingAverageFactor;
+  }
+}
 

@@ -291,7 +291,7 @@ void checkSerialInput() {
     // highlight column
     else if (inByte > NUM_BUTTONS*2+1 && inByte < (NUM_BUTTONS)*2+2+NUM_COLUMNS) highlightColumn(inByte-(NUM_BUTTONS*2+2));
     // change ledColor
-    //else ledColor = inByte - 138;
+    //else ledColor = inByte - NUM_BUTTONS*2+2+NUM_COLUMNS;
   }
 }
 
