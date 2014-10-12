@@ -3,7 +3,7 @@
  *
  * Jenna deBoisblanc
  * http://jdeboi.com
- * June 2014
+ * October 2014
  *
  
   Overview: this sketch sends and receives serial data to the 
@@ -43,6 +43,15 @@
 //VARIABLES & LIBRARIES///////////////////////
 /////////////////////////////////////////////////////
 
+///////////////////////////////
+// EDIT THESE NUMBERS TO CHANGE
+// THE NUMBER OF BUTTONS ON THE
+// MONOME. MAKE SURE TO INCLUDE
+// SOUNDFILES IN loadSounds()
+int numRows = 8;
+int numCols = 8;
+///////////////////////////////
+
 // variables to keep track of buttons
 final int REC = 0;
 final int SNAP = 1;
@@ -61,9 +70,7 @@ Minim minim;
 AudioSample[] sounds;
 
 // buttons
-int numButtons = 16;
-int numRows = 4;
-int numCols = 4;
+int numButtons = numRows*numCols;
 Button[] buttons;
 int numMenuButtons = 4;
 MenuButton[] menuButtons;
@@ -564,8 +571,8 @@ void loadSounds() {
   sounds[1] = minim.loadSample("audio/1.wav", 512); // hihatcl
   sounds[2] = minim.loadSample("audio/2.wav", 512); // hihatopen
   sounds[3] = minim.loadSample("audio/3.wav", 512); // kick
-  /*
   sounds[4] = minim.loadSample("audio/4.wav", 512); // snare
+  /*
   sounds[5] = minim.loadSample("audio/5.wav", 512); // starkick
   sounds[6] = minim.loadSample("audio/6.wav", 512); // tomhi
   sounds[7] = minim.loadSample("audio/7.wav", 512); // tomlow
