@@ -566,17 +566,10 @@ void loadSounds() {
    // see minim Processing example files for explanations
   minim = new Minim(this);
   // load sounds - filename, buffer size
-  sounds = new AudioSample[numRows];
-  sounds[0] = minim.loadSample("audio/0.wav", 512); // clap
-  sounds[1] = minim.loadSample("audio/1.wav", 512); // hihatcl
-  sounds[2] = minim.loadSample("audio/2.wav", 512); // hihatopen
-  sounds[3] = minim.loadSample("audio/3.wav", 512); // kick
-  sounds[4] = minim.loadSample("audio/4.wav", 512); // snare
-  /*
-  sounds[5] = minim.loadSample("audio/5.wav", 512); // starkick
-  sounds[6] = minim.loadSample("audio/6.wav", 512); // tomhi
-  sounds[7] = minim.loadSample("audio/7.wav", 512); // tomlow
-  */
+  for(int i=0; i<numRows; i++) {
+    String f = "audio/" + i + ".wav";
+    sounds[i] = minim.loadSample(f, 512);
+  }
 }
 
 void createButtons() {
