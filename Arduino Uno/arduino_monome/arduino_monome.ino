@@ -2,12 +2,12 @@
  ************************************************
  ********* CONDUCTIVE ARDUINO MONOME ************
  ************************************************
- //MAKER////////////
+ MAKER
  Jenna deBoisblanc
  http://jdeboi.com
  start date: October 2014
  
- //DESCRIPTION//////
+ DESCRIPTION
  My objective for this project was to build a monome- http://monome.org/ -
  (basically a programmable array of backlit buttons that's used
  to compose electronic music or mix video) using tools and processes 
@@ -20,7 +20,7 @@
  need 1 digital out- arranged in an 8x8 zigzag matrix to light up the squares when 
  pressed.
  
- //CREDIT///////////
+ CREDIT
  Special thanks to Amanda Ghassaei, one of my best friends, for introducing
  me to monomes and the Maker Movement.
  
@@ -30,7 +30,8 @@
  2. Capacitive sensor code: http://playground.arduino.cc/Code/CapacitiveSensor
  3. Adafruit Neopixel library
  http://learn.adafruit.com/adafruit-neopixel-uberguide/neomatrix-library
- */
+ 
+*/
 
 /////////////////////////
 // DEBUG DEFINITIONS ////               
@@ -78,7 +79,7 @@ uint32_t ledColor = 0;
 uint32_t ledHighlightColor = 0;
 uint32_t ledHighlightOnColor = 0;
 
-/*
+
 /////////////////////////
 // NEOPIXELS ////////////
 /////////////////////////
@@ -87,7 +88,6 @@ uint32_t ledHighlightOnColor = 0;
 #define NEO_PIN 12
 #include <Adafruit_NeoPixel.h>
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_BUTTONS, NEO_PIN, NEO_GRB + NEO_KHZ800);
-*/
 
 
 ///////////////////////////////////
