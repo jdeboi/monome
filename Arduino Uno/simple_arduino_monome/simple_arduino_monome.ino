@@ -2,12 +2,12 @@
  ************************************************
  ****** SIMPLE CONDUCTIVE ARDUINO MONOME ********
  ************************************************
- //MAKER////////////
+ MAKER
  Jenna deBoisblanc
  http://jdeboi.com
  start date: October 2014
  
- //DESCRIPTION//////
+ DESCRIPTION
  My objective for this project was to build a monome- http://monome.org/ -
  (basically a programmable array of backlit buttons that's used
  to compose electronic music or mix video) using tools and processes 
@@ -17,7 +17,7 @@
  with copper tape, jumpers, an Arduino Uno, and the monomeVisual 
  Processing sketch. It relies on capacitive sensors.
  
- //CREDIT///////////
+ CREDIT
  Special thanks to Amanda Ghassaei, one of my best friends, for introducing
  me to monomes and the Maker Movement.
  
@@ -25,6 +25,7 @@
  MaKey MaKey FIRMWARE v1.4.1
  by: Eric Rosenbaum, Jay Silver, and Jim Lindblom http://makeymakey.com
  Capacitive sensor code: http://playground.arduino.cc/Code/CapacitiveSensor
+*/
 
 /////////////////////////
 // DEBUG DEFINITIONS ////               
