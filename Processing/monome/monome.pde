@@ -565,8 +565,10 @@ void getSerialPort(){
 void loadSounds() {
    // see minim Processing example files for explanations
   minim = new Minim(this);
+  sounds = new AudioSample[numRows];
   // load sounds - filename, buffer size
   for(int i=0; i<numRows; i++) {
+    println(i);
     String f = "audio/" + i + ".wav";
     sounds[i] = minim.loadSample(f, 512);
   }
