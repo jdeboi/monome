@@ -6,12 +6,12 @@ Jenna deBoisblanc<br>
 2014<br>
 [jdeboi.com](http://jdeboi.com/makey-makey-monome/)
 
-Updated Project:
-David Cool
-http://davidcool.com
-http://generactive.net
-http://mystic.codes
-December 2015
+Updated Project:<br>
+David Cool<br>
+http://davidcool.com<br>
+http://generactive.net<br>
+http://mystic.codes<br>
+December 2015<br>
 
 Processing Updates:
 - Fixed recording feature so it works with Processing sketch & monome interaction
