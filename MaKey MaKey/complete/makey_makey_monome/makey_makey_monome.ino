@@ -1,13 +1,26 @@
 /*
  ************************************************
- ********** MAKEY MAKEY PAPER MONOME ************
+ ************* MAKEY MAKEY MONOME ***************
  ************************************************
- //MAKER////////////
+ //ORIGINAL MAKER////////////
  Jenna deBoisblanc
  http://jdeboi.com
  start date: January 2014
- Instructable:
- GitHub repo:
+
+ //UPDATED MAKER////////////
+ David Cool
+ http://davidcool.com
+ http://generactive.net
+ http://mystic.codes
+ December 2015
+
+ Updates:
+ - Added rainbow loop when no serial data is detected
+ - Changed initialization to R / G / B color wipe
+ - Added a button reset to loop (fixes buttons left on when exiting processing)
+
+ TODO:
+ - Figure out big lag when "waking" from rainbow loop when serial is detected
  
  //DESCRIPTION//////
  My objective for this project was to build a monome- http://monome.org/ -
@@ -59,7 +72,7 @@
 #define NUM_BUTTONS      NUM_ROWS * NUM_COLUMNS    // 64 buttons
 #define TARGET_LOOP_TIME 744  // (1/56 seconds) / 24 samples = 744 microseconds per sample 
 
-#define SERIAL9600
+#define SERIAL57600
 #include "settings.h"
 
 /////////////////////////
@@ -111,6 +124,7 @@ int pressThreshold;
 int releaseThreshold;
 int triggerThresh = 200;
 boolean inputChanged;
+int count = 0;
 
 
 /*
@@ -180,9 +194,9 @@ void updateNeopixels();
 //////////////////////
 void setup() 
 {
+  initializeNeopixels();
   initializeArduino();
   initializeInputs();
-  initializeNeopixels();
   delay(100);
 }
 
@@ -191,6 +205,7 @@ void setup()
 ////////////////////
 void loop() 
 { 
+  if (Serial) {
   checkSerialInput();
   updateMeasurementBuffers();
   updateBufferSums();
@@ -198,14 +213,23 @@ void loop()
   updateInputStates();
   updateOutLED();
   addDelay();
+  count = 1;
+  } else {
+    if (count == 1) {
+      clearMonome();
+      count = 0;
+    }
+    rainbow(100);
+  }
 }
 
 //////////////////////////
 // INITIALIZE ARDUINO
 //////////////////////////
 void initializeArduino() {
-  Serial.begin(9600);  
+  Serial.begin(57600);  
   while (!Serial) {
+    rainbow(100);
     ; // wait for serial port to connect. Needed for Leonardo only
   }
   /* Set up input pins 
@@ -262,7 +286,7 @@ void initializeInputs() {
   }
 }
 
-void checkSerialInput() {
+int checkSerialInput() {
   /*
     here is what the incoming serial data means
     0 => no incoming serial data
@@ -301,9 +325,12 @@ void checkSerialInput() {
 void initializeNeopixels() {
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
-  rainbow(20);
+  colorWipe(strip.Color(255, 0, 0), 20); // Red
+  colorWipe(strip.Color(0, 255, 0), 20); // Green
+  colorWipe(strip.Color(0, 0, 255), 20); // Blue
   clearNeopixels();
   setColors();
+  delay(1000);
 }
 
 
@@ -425,7 +452,7 @@ void updateMonome() {
             if(!buttons[index].state) { 
               buttons[index].state = true;
               updateNeopixels();
-#ifdef SERIAL9600 
+#ifdef SERIAL57600 
               // add 1 to differentiate index from 0 bytes of serial data
               Serial.write(index+1);
 #endif              
@@ -438,7 +465,7 @@ void updateMonome() {
             else {
               buttons[index].state = false;
               updateNeopixels();
-#ifdef SERIAL9600              
+#ifdef SERIAL57600              
               Serial.write(index+1+NUM_BUTTONS);
 #endif  
 #ifdef DEBUG_MONOME
@@ -601,10 +628,19 @@ void rainbow(uint8_t wait) {
   }
 }
 
+// Fill the dots one after the other with a color
+void colorWipe(uint32_t c, uint8_t wait) {
+  for(uint16_t i=0; i<strip.numPixels(); i++) {
+    strip.setPixelColor(i, c);
+    strip.show();
+    delay(wait);
+  }
+}
+
 void setColors() {
-  ledColor = strip.Color(10, 255, 79);
-  ledHighlightColor = strip.Color(23, 114, 255);
-  ledHighlightOnColor = strip.Color(10, 255, 79);
+  ledColor = strip.Color(255, 0, 191);
+  ledHighlightColor = strip.Color(0, 0, 255);
+  ledHighlightOnColor = strip.Color(0, 255, 213);
 }
 
 

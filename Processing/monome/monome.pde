@@ -1,11 +1,25 @@
 /*
  * Makey Makey Monome 
  *
+ * Original Sketch:
  * Jenna deBoisblanc
  * http://jdeboi.com
  * October 2014
  *
- 
+ * Updated Sketch:
+ * David Cool
+ * http://davidcool.com
+ * http://generactive.net
+ * http://mystic.codes
+ * December 2015
+
+	* Updates:
+	- Fixed recording feature so it work on screen & with monome
+	- Fixed bug where first monome button press wouldn't register
+	- Fixed bug where serial selection list would have double entries
+	- Changed button colors on screen and changed to matching colors on monome
+	
+
   Overview: this sketch sends and receives serial data to the 
   MaKey MaKey Monome to control sounds and LEDs. This Processing
   sketch is also standalone, so you can mix sounds without the
@@ -29,12 +43,12 @@
   
    To add new sounds:
    Simply replace the files in the 'audio' folder with any .wav files
-   labeled 0.wav through 9.wav. Included in the audio folder are
+   labeled 0.wav through 7.wav. Included in the audio folder are
    subfolders with a variety of different sounds. Copy paste those 
    into the audio or find your own unique .wav files.
   
    To save recording files:
-   simply move the files in the recording directory to a new 
+   Simply move the files in the recording directory to a new 
    folder, and keep recording new .txt files. 
 */
 
@@ -66,6 +80,11 @@ int useSerial = -1;
 
 // Sound 
 import ddf.minim.*;
+import ddf.minim.analysis.*;
+import ddf.minim.effects.*;
+import ddf.minim.signals.*;
+import ddf.minim.spi.*;
+import ddf.minim.ugens.*;
 Minim minim;
 AudioSample[] sounds;
 
@@ -118,11 +137,14 @@ int sliderY = 75;
 int sliderW = monomeX + monomeWidth - sliderX;
 int sliderH = 15;
 
+int count = 0;
+
 ////////////////////////////////////////
 //SETUP///////////////////////////////////////
 /////////////////////////////////////////////////////
 void setup() {
-  size(windowWidth, windowHeight, P3D);
+  size(700, 700, P3D);
+  //fullScreen(P3D);
   buttons = new Button[numButtons];
   menuButtons = new MenuButton[numMenuButtons];
   slider = new Slider(sliderX, sliderY, sliderW, sliderH, minTempo, maxTempo, tempo);
@@ -131,7 +153,7 @@ void setup() {
  loadSounds();
  loadMenuButtons();
  createButtons();
- 
+
  // load a file
  file = loadStrings("files/file"+ fileIndex + ".txt");
  
@@ -145,7 +167,7 @@ void draw() {
   
   if ( useSerial < 0){
     getSerialPort();
-    println(useSerial);
+    //println(useSerial);
     return;
   }
   
@@ -237,18 +259,32 @@ void resetMonome() {
 
 void updateButtons() {
   if ( useSerial > 0 && myPort.available() > 0) {  // If data is available
+    if (count == 0) {
+    	count++;
+    }
+
     val = myPort.read();         // read it and store it in val
-    /* we add 1 to the button index value on the Arduino
+    /* 
+    We add 1 to the button index value on the Arduino
     so that we can differentiate from a null serial transmission
-     We add numButtons to the index to indicate that the button is turning off
+    We add numButtons to the index to indicate that the button is turning off
      */
-    //if(val < (numButtons*2+1)) {
-      if (val > numButtons) buttons[val-(numButtons+1)].switchOff();
-      else if (val > 0) {buttons[val-1].switchOn(); println("off");}
-    //}
-    //else text("confused", 10, 20);
-    // TODO - WHAT? shouldn't this be (button#), not (val)??
-    // recordButton(val);
+      if (val > numButtons) {
+      	buttons[val-(numButtons+1)].switchOff();
+      	recordButton(val-(numButtons+1));
+      	// send on/off info to console
+      	println("off");
+      	println("val: " + val);
+      	println();
+      }
+      else if (val > 0) {
+      	buttons[val-1].switchOn();
+      	recordButton(val-1);
+      	// send on/off info to console
+      	println("on");
+      	println("val: " + (val));
+      	println();
+      }
   }
 }
 
@@ -258,6 +294,15 @@ void checkButtonClick() {
       buttons[i].switchState();
       recordButton(i);
       sendToMonome(i);
+      //send on/off info to console
+      if (buttons[i].state) {
+      	println("on");
+      	println("val: " + (i + 1));
+      } else {
+      	println("off");
+      	println("val: " + ((i + 1) + numButtons));
+      }
+      println();
     }
   }
 }
@@ -292,7 +337,9 @@ void recordButton(int button) {
     if (buttons[button].state) val = button+1;
     else val = button + numButtons+1;
     timeTriggered = append(timeTriggered, millis() - startTime);
+    println("time: " + (millis() - startTime));
     buttonTriggered = append(buttonTriggered, val);
+    //println("button: " + val);
   }  
 }
 
@@ -325,6 +372,7 @@ void saveRecording() {
   String[] lines = new String[timeTriggered.length];
   for (int i = 0; i < timeTriggered.length; i++) {
     lines[i] = timeTriggered[i] + "\t" + buttonTriggered[i];
+    println(lines[i]);
   }
   String fileName = "files/file" + fileIndex + ".txt";
   saveStrings(fileName, lines);
@@ -527,8 +575,8 @@ void getSerialPort(){
   int y0 = 50;
   fill(0);
   text("Select serial port:", x, 30);
-  Button[] setupButtons = new Button[ports.length+1];
-  for(i = 0; i < ports.length; i++){
+  Button[] setupButtons = new Button[(ports.length/2)+1];
+  for(i = 0; i < (ports.length/2); i++){
     setupButtons[i] = new Button(i, x, 30*i+y0, 20, 20);
     fill(0);
     text(ports[i], x+30, 30*i+y0+15);
@@ -542,12 +590,12 @@ void getSerialPort(){
       button.state = true;
       button.highlight = true;
       if(mousePressed) {
-        if( button.n == ports.length ){
+        if( button.n == (ports.length/2) ){
           useSerial = 0;
           return;
         } else {
           useSerial = button.n;
-          myPort = new Serial(this, ports[button.n], 9600);
+          myPort = new Serial(this, ports[button.n], 57600);
           return;
         }
       }
@@ -567,11 +615,13 @@ void loadSounds() {
   minim = new Minim(this);
   sounds = new AudioSample[numRows];
   // load sounds - filename, buffer size
+  //print("Loading sounds: ");
   for(int i=0; i<numRows; i++) {
-    println(i);
+    //print(i + " ");
     String f = "audio/" + i + ".wav";
     sounds[i] = minim.loadSample(f, 512);
   }
+  //println();
 }
 
 void createButtons() {
@@ -599,4 +649,3 @@ void sendToMonome(int b) {
     else myPort.write(b+numButtons+1); 
   }
 }
-

@@ -4,10 +4,10 @@ class Button {
   boolean pressed;
   boolean state;
   boolean highlight;
-  color onColor = #A5FF31;
-  color offColor = #31FFB2;
-  color highlightColor = #2BD6C9;
-  color highlightOnColor = #8ED62B;
+  color onColor = #ff00bf;
+  color offColor = #808080;
+  color highlightColor = #0000ff;
+  color highlightOnColor = #00FFD5;
   
   Button(int num, int xpos, int ypos, int wd, int ht) {
     n = num;
