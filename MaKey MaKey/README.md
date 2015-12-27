@@ -1,9 +1,25 @@
 Makey Makey Monome
 ==============
 
+Original Project:
 Jenna deBoisblanc<br>
 2014<br>
 [jdeboi.com](http://jdeboi.com/makey-makey-monome/)
+
+Updated Project:<br>
+David Cool<br>
+http://davidcool.com<br>
+http://generactive.net<br>
+http://mystic.codes<br>
+December 2015<br>
+
+Arduino Updates:
+- Added rainbow loop when no serial data is detected
+- Changed initialization to R / G / B color wipe
+- Added a button reset to loop (fixes buttons left on when exiting processing)
+
+TODO:
+- Figure out big lag when "waking" from rainbow loop when serial is detected (use interrupts?)
 
 **Objective**: Build an uber kid-friendly monome (a complex electronic music instrument).
 <hr>
